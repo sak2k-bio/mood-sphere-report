@@ -33,6 +33,15 @@ const questions: Question[] = [
   },
 ];
 
+// Map question ids to question types for the emoji selector
+const questionTypes: {[key: number]: 'general' | 'stress' | 'social' | 'energy' | 'satisfaction'} = {
+  1: 'general',
+  2: 'stress',
+  3: 'social',
+  4: 'energy',
+  5: 'satisfaction'
+};
+
 const MoodQuestionnaire: React.FC<MoodQuestionnaireProps> = ({ onSubmit }) => {
   const [answers, setAnswers] = useState<number[]>(questions.map(() => 5));
   const { toast } = useToast();
@@ -80,6 +89,7 @@ const MoodQuestionnaire: React.FC<MoodQuestionnaireProps> = ({ onSubmit }) => {
             question={question.text}
             value={answers[index]}
             onChange={(value) => handleAnswerChange(index, value)}
+            questionType={questionTypes[question.id]}
           />
         ))}
       </div>

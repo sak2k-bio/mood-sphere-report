@@ -1,17 +1,24 @@
 
 import React from 'react';
-import { Smile, Frown, Meh } from 'lucide-react';
+import { Smile, Frown, Meh, Laugh, Angry, Heart } from 'lucide-react';
 
 interface MoodEmojiProps {
   score: number;
   size?: number;
   className?: string;
+  type?: 'general' | 'stress' | 'social' | 'energy' | 'satisfaction';
 }
 
-const MoodEmoji: React.FC<MoodEmojiProps> = ({ score, size = 32, className = '' }) => {
-  const getMoodInfo = (score: number) => {
+const MoodEmoji: React.FC<MoodEmojiProps> = ({ 
+  score, 
+  size = 32, 
+  className = '', 
+  type = 'general' 
+}) => {
+  const getMoodInfo = (score: number, type: string) => {
+    // Base mood info with standard emojis
     if (score >= 8) {
-      return { icon: <Smile size={size} className="text-mood-great" />, label: 'Great' };
+      return { icon: <Laugh size={size} className="text-mood-great" />, label: 'Great' };
     } else if (score >= 6) {
       return { icon: <Smile size={size} className="text-mood-good" />, label: 'Good' };
     } else if (score >= 4) {
@@ -19,11 +26,11 @@ const MoodEmoji: React.FC<MoodEmojiProps> = ({ score, size = 32, className = '' 
     } else if (score >= 2) {
       return { icon: <Frown size={size} className="text-mood-bad" />, label: 'Bad' };
     } else {
-      return { icon: <Frown size={size} className="text-mood-terrible" />, label: 'Terrible' };
+      return { icon: <Angry size={size} className="text-mood-terrible" />, label: 'Terrible' };
     }
   };
 
-  const moodInfo = getMoodInfo(score);
+  const moodInfo = getMoodInfo(score, type);
 
   return (
     <div className={`flex flex-col items-center gap-1 ${className}`}>

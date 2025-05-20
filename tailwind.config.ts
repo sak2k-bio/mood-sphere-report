@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -68,6 +69,9 @@ export default {
 					okay: '#FFEB3B',
 					bad: '#FF9800',
 					terrible: '#F44336'
+				},
+				heart: {
+					400: '#FF5E94' // Pink color for satisfaction emojis
 				}
 			},
 			borderRadius: {
