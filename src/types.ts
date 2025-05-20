@@ -13,4 +13,5 @@ export interface MoodEntry {
   date: string;
   answers: Answer[];
   overallScore: number;
+  triggers?: string[];
 }
