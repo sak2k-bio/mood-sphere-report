@@ -3,6 +3,7 @@ import './globals.css'
 import { Providers } from './providers'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://moodsphere.app'),
   title: 'MoodSphere - Track Your Emotional Health',
   description: 'Track, visualize, and understand your emotional health with MoodSphere',
   authors: [{ name: 'MoodSphere' }],

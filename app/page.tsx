@@ -17,7 +17,7 @@ import MobileNav from './components/MobileNav';
 import MoodFilter, { FilterOptions } from './components/MoodFilter';
 import { MoodEntry } from './types';
 import { Moon, Sun } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/app/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 export default function Home() {
