@@ -14,4 +14,5 @@ export interface MoodEntry {
   answers: Answer[];
   overallScore: number;
   triggers?: string[];
+  journalNote?: string;
 }
