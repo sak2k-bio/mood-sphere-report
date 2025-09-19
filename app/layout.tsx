@@ -3,7 +3,11 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter'
+})
 
 export const metadata: Metadata = {
   title: 'MoodSphere - Track Your Emotional Health',
@@ -49,7 +53,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="MoodSphere" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.variable} font-sans`}>
         <Providers>{children}</Providers>
       </body>
     </html>
