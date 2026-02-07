@@ -9,11 +9,11 @@ interface MoodEmojiProps {
   type?: 'general' | 'stress' | 'social' | 'energy' | 'satisfaction';
 }
 
-const MoodEmoji: React.FC<MoodEmojiProps> = ({ 
-  score, 
-  size = 32, 
-  className = '', 
-  type = 'general' 
+const MoodEmoji: React.FC<MoodEmojiProps> = ({
+  score,
+  size = 32,
+  className = '',
+  type = 'general'
 }) => {
   const getMoodInfo = (score: number, type: string) => {
     // Base mood info with standard emojis
@@ -37,7 +37,7 @@ const MoodEmoji: React.FC<MoodEmojiProps> = ({
       <div className="transition-all duration-300 hover:scale-110">
         {moodInfo.icon}
       </div>
-      <span className="text-sm font-medium text-primary dark:text-primary-foreground">{moodInfo.label}</span>
+      <span className="text-sm font-medium text-primary dark:text-foreground">{moodInfo.label}</span>
     </div>
   );
 };

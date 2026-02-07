@@ -2,20 +2,28 @@
 import React, { useState } from 'react';
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Smile, SlidersHorizontal } from "lucide-react";
+import { Smile, SlidersHorizontal, Info } from "lucide-react";
 import MoodEmoji from './MoodEmoji';
 import GradientMoodSelector from './GradientMoodSelector';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MoodSliderProps {
   question: string;
+  description?: string;
   value: number;
   onChange: (value: number) => void;
   questionType?: 'general' | 'stress' | 'social' | 'energy' | 'satisfaction';
 }
 
 const MoodSlider: React.FC<MoodSliderProps> = ({
-  question, 
-  value, 
+  question,
+  description,
+  value,
   onChange,
   questionType = 'general'
 }) => {
@@ -28,10 +36,24 @@ const MoodSlider: React.FC<MoodSliderProps> = ({
   return (
     <div className="w-full p-4 md:p-6 rounded-lg bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow border border-primary/10">
       <div className="flex justify-between items-center mb-4 md:mb-6">
-        <h3 className="text-base md:text-lg font-medium">{question}</h3>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <div className="flex items-center gap-2">
+          <h3 className="text-base md:text-lg font-medium">{question}</h3>
+          {description && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help opacity-70 hover:opacity-100 transition-opacity" />
+                </TooltipTrigger>
+                <TooltipContent className="bg-white dark:bg-gray-900 border-primary/10 shadow-xl p-3">
+                  <p className="max-w-xs text-sm leading-relaxed">{description}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={toggleInterface}
           className="h-8 w-8 p-0 rounded-full"
           title={useGradient ? "Switch to slider" : "Switch to emoji selector"}
@@ -39,10 +61,10 @@ const MoodSlider: React.FC<MoodSliderProps> = ({
           {useGradient ? <SlidersHorizontal size={16} /> : <Smile size={16} />}
         </Button>
       </div>
-      
+
       {useGradient ? (
-        <GradientMoodSelector 
-          value={value} 
+        <GradientMoodSelector
+          value={value}
           onChange={onChange}
           questionType={questionType}
         />

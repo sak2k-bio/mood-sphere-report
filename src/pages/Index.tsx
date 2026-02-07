@@ -119,15 +119,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-accent to-white dark:from-primary/20 dark:to-background transition-colors duration-300">
-      <div className="container max-w-4xl pt-6 md:pt-10 pb-12 md:pb-20 px-4">
+      <div className="containe max-w-5xl pt-6 md:pt-10 pb-12 md:pb-20 px-4 mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
-          <div className="text-left">
-            <h1 className="text-2xl md:text-3xl font-bold text-primary mb-1 md:mb-2 text-glow">MoodSphere</h1>
-            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Welcome back, <span className="font-semibold text-primary">{user.fullName}</span></p>
+          <div className="text-left font-sans">
+            <h1 className="text-2xl md:text-4xl font-black text-primary mb-1 md:mb-2 tracking-tight text-shadow-sm">MoodSphere</h1>
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 font-medium">Hello, <span className="font-bold text-primary">{user.fullName}</span> 👋</p>
           </div>
 
           <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm p-2 rounded-full shadow-sm">
+            <div className="flex items-center space-x-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm p-2 rounded-full shadow-md border border-white/20">
               <Sun className="h-4 w-4 text-yellow-500" />
               <Switch
                 checked={theme === 'dark'}
@@ -136,46 +136,44 @@ const Index = () => {
               />
               <Moon className="h-4 w-4 text-indigo-300 dark:text-indigo-400" />
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="rounded-full hover:bg-destructive/10 hover:text-destructive">
-              <LogOut className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="rounded-full hover:bg-destructive/10 hover:text-destructive group transition-colors">
+              <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
             </Button>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6 md:mb-8 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm p-1">
-            <TabsTrigger value="track" className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground transition-all duration-300">Track</TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground transition-all duration-300">History</TabsTrigger>
-            <TabsTrigger value="insights" className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground transition-all duration-300">Insights</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 mb-6 md:mb-10 bg-white/40 dark:bg-gray-800/40 backdrop-blur-md p-1.5 rounded-2xl shadow-inner border border-white/10">
+            <TabsTrigger value="track" className="rounded-xl py-2.5 md:py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground transition-all duration-300 font-semibold tracking-wide">Track</TabsTrigger>
+            <TabsTrigger value="history" className="rounded-xl py-2.5 md:py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground transition-all duration-300 font-semibold tracking-wide">History</TabsTrigger>
+            <TabsTrigger value="insights" className="rounded-xl py-2.5 md:py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground transition-all duration-300 font-semibold tracking-wide">Insights</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="track" className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-2">
-                <Card className="border-primary/10 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm h-full glass-card">
-                  <CardContent className="pt-6">
-                    <MoodQuestionnaire onSubmit={handleMoodSubmit} />
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="md:col-span-1">
-                <TriggerSelector
-                  onSelectTriggers={setSelectedTriggers}
-                  selectedTriggers={selectedTriggers}
-                />
-              </div>
+          <TabsContent value="track" className="mt-4 animate-in fade-in zoom-in-95 duration-500">
+            {/* Centered Trigger Selector */}
+            <div className="max-w-2xl mx-auto mb-10">
+              <TriggerSelector
+                onSelectTriggers={setSelectedTriggers}
+                selectedTriggers={selectedTriggers}
+              />
             </div>
+
+            {/* Questions Section - Layout handled internally by MoodQuestionnaire */}
+            <MoodQuestionnaire onSubmit={handleMoodSubmit} />
           </TabsContent>
 
           <TabsContent value="history" className="mt-4 animate-in fade-in duration-500">
-            <Card className="border-primary/10 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm glass-card">
-              <CardContent className="pt-6">
+            <Card className="border-primary/10 shadow-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm glass-card overflow-hidden">
+              <CardContent className="pt-8">
                 {moodEntries.length > 0 ? (
                   <MoodGraph data={moodEntries} />
                 ) : (
-                  <div className="text-center py-10">
-                    <p className="text-gray-500 dark:text-gray-400">No mood entries yet. Start tracking to see your personal history.</p>
+                  <div className="text-center py-20">
+                    <div className="bg-primary/5 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Loader2 className="h-8 w-8 text-primary/40" />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">Your emotional journey starts here.</p>
+                    <p className="text-sm text-gray-400 mt-2">Track your first mood to see history.</p>
                   </div>
                 )}
               </CardContent>
@@ -183,13 +181,16 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="insights" className="mt-4 animate-in fade-in duration-500">
-            <Card className="border-primary/10 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm glass-card">
-              <CardContent className="pt-6">
+            <Card className="border-primary/10 shadow-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm glass-card overflow-hidden">
+              <CardContent className="pt-8 px-4 md:px-8">
                 {moodEntries.length > 0 ? (
                   <ReportGenerator entries={moodEntries} />
                 ) : (
-                  <div className="text-center py-10">
-                    <p className="text-gray-500 dark:text-gray-400">Complete a mood check-in to generate insights.</p>
+                  <div className="text-center py-20">
+                    <div className="bg-primary/5 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Loader2 className="h-8 w-8 text-primary/40" />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">Insights will appear after your first check-in.</p>
                   </div>
                 )}
               </CardContent>
@@ -198,9 +199,9 @@ const Index = () => {
         </Tabs>
 
         {moodEntries.length > 0 && activeTab === "track" && (
-          <div className="mt-6 text-center animate-pulse">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              You've logged {moodEntries.length} mood entries. Great progress, {user.fullName.split(' ')[0]}!
+          <div className="mt-10 text-center animate-bounce">
+            <p className="text-sm font-medium text-primary/60 dark:text-primary/40 bg-primary/5 dark:bg-primary/10 py-2 px-6 rounded-full inline-block">
+              You've recorded {moodEntries.length} entries. Keep up the great work! ✨
             </p>
           </div>
         )}
