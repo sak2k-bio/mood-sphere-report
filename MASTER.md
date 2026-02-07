@@ -47,6 +47,7 @@ Future requirements (if adding AI/Cloud):
 - `VITE_GEMINI_API_KEY`: For AI analysis.
 - `VITE_STRIPE_PUBLIC_KEY`: For payments.
 
-## 8. Tweakable Components
-- **MoodSlider**: Change discrete steps (currently 1-10) in [MoodSlider.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/components/MoodSlider.tsx).
-- **Sample Data**: Modify generation logic in [Index.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/pages/Index.tsx#L48-83).
+## 9. Authentication
+- **Default Password**: Set to `mood123` in [Auth.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/components/Auth.tsx#L19).
+- **Environment Variable**: Use `VITE_AUTH_PASSWORD` in your `.env` to override the default.
+- **Logout**: Clear `isAuthenticated` from `localStorage` to log out.

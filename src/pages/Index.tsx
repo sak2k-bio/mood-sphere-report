@@ -8,83 +8,110 @@ import MoodQuestionnaire from '../components/MoodQuestionnaire';
 import MoodGraph from '../components/MoodGraph';
 import ReportGenerator from '../components/ReportGenerator';
 import TriggerSelector from '../components/TriggerSelector';
+import Auth from '../components/Auth';
 import { MoodEntry } from '../types';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Loader2 } from 'lucide-react';
+import { fetchEntries, saveEntry } from '../lib/googleSheets';
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [activeTab, setActiveTab] = useState("track");
   const [selectedTriggers, setSelectedTriggers] = useState<string[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { setTheme, theme } = useTheme();
-  
-  // Load data from localStorage on initial render
+  const { toast } = useToast();
+
+  // Auth check and Data loading
   useEffect(() => {
-    const savedEntries = localStorage.getItem('moodEntries');
-    if (savedEntries) {
-      setMoodEntries(JSON.parse(savedEntries));
+    const authStatus = localStorage.getItem('isAuthenticated') === 'true';
+    setIsAuthenticated(authStatus);
+
+    if (authStatus) {
+      loadData();
     } else {
-      // Generate sample data if no entries exist
-      generateSampleData();
+      setIsLoading(false);
     }
   }, []);
-  
-  // Save data to localStorage whenever entries change
-  useEffect(() => {
-    localStorage.setItem('moodEntries', JSON.stringify(moodEntries));
-  }, [moodEntries]);
-  
-  const handleMoodSubmit = (entry: MoodEntry) => {
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const entries = await fetchEntries();
+      setMoodEntries(entries);
+    } catch (error) {
+      toast({
+        title: "Error loading data",
+        description: "Could not fetch entries from Google Sheets. Using local cache if available.",
+        variant: "destructive"
+      });
+      // Fallback to local storage if API fails
+      const saved = localStorage.getItem('moodEntries');
+      if (saved) setMoodEntries(JSON.parse(saved));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAuthenticated = () => {
+    setIsAuthenticated(true);
+    loadData();
+  };
+
+  const handleMoodSubmit = async (entry: MoodEntry) => {
     // Include the selected triggers with the mood entry
     const entryWithTriggers = {
       ...entry,
       triggers: selectedTriggers
     };
+
+    // Optimistic update
+    const previousEntries = [...moodEntries];
     setMoodEntries(prev => [...prev, entryWithTriggers]);
+
+    // Also save to local storage as cache
+    localStorage.setItem('moodEntries', JSON.stringify([...moodEntries, entryWithTriggers]));
+
     setSelectedTriggers([]); // Reset triggers after submission
     setActiveTab("insights");
-  };
 
-  // Generate sample data if no entries exist
-  const generateSampleData = () => {
-    if (moodEntries.length === 0) {
-      const sampleData: MoodEntry[] = [];
-      const today = new Date();
-      
-      // Sample triggers for demo data
-      const sampleTriggers = [
-        ["Work stress", "Sleep problems"],
-        ["Family conflict", "Financial concerns"],
-        ["Social anxiety", "Loneliness"],
-        ["Health issues", "Performance anxiety"],
-        ["Relationship issues", "Criticism"],
-        ["Academic pressure", "Major life change"],
-        ["Traumatic memory", "Rejection"]
-      ];
-      
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        
-        // Create random mood entries with scores between 3 and 8
-        const score = 3 + Math.random() * 5;
-        sampleData.push({
-          date: date.toISOString(),
-          answers: Array(5).fill(0).map((_, idx) => ({
-            questionId: idx + 1,
-            value: 3 + Math.random() * 5
-          })),
-          overallScore: parseFloat(score.toFixed(1)),
-          triggers: i < sampleTriggers.length ? sampleTriggers[i] : []
-        });
-      }
-      
-      setMoodEntries(sampleData);
+    // Sync to Google Sheets
+    const success = await saveEntry(entryWithTriggers);
+    if (!success) {
+      // We don't necessarily revert here if we want to allow offline-ish behavior, 
+      // but the user's COMPASS.md says "replace with real data", so we should warn.
+      toast({
+        title: "Sync Warning",
+        description: "Data saved locally but could not sync to Google Sheets.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Synced Successfully",
+        description: "Your mood log has been saved to Google Sheets.",
+      });
     }
   };
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+
+  if (!isAuthenticated) {
+    return <Auth onAuthenticated={handleAuthenticated} />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent to-white dark:from-primary/20 dark:to-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <p className="text-muted-foreground animate-pulse">Loading your MoodSphere...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-accent to-white dark:from-primary/20 dark:to-background transition-colors duration-300">
@@ -94,10 +121,10 @@ const Index = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-primary mb-1 md:mb-2">MoodSphere</h1>
             <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Track, visualize, and understand your emotional health</p>
           </div>
-          
+
           <div className="flex items-center space-x-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm p-2 rounded-full shadow-sm">
             <Sun className="h-4 w-4 text-yellow-500" />
-            <Switch 
+            <Switch
               checked={theme === 'dark'}
               onCheckedChange={toggleTheme}
               className="data-[state=checked]:bg-primary/80"
@@ -105,14 +132,14 @@ const Index = () => {
             <Moon className="h-4 w-4 text-indigo-300 dark:text-indigo-400" />
           </div>
         </div>
-        
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6 md:mb-8 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
             <TabsTrigger value="track" className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground">Track Mood</TabsTrigger>
             <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground">History</TabsTrigger>
             <TabsTrigger value="insights" className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground">Insights</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="track" className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2">
@@ -122,15 +149,15 @@ const Index = () => {
                   </CardContent>
                 </Card>
               </div>
-              
+
               <div className="md:col-span-1">
-                <TriggerSelector 
+                <TriggerSelector
                   onSelectTriggers={setSelectedTriggers}
                   selectedTriggers={selectedTriggers}
                 />
               </div>
             </div>
-            
+
             {moodEntries.length > 0 && (
               <div className="mt-8 md:mt-10">
                 <Card className="border-primary/10 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
@@ -142,7 +169,7 @@ const Index = () => {
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="history" className="mt-4">
             <Card className="border-primary/10 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
               <CardContent className="pt-6">
@@ -156,7 +183,7 @@ const Index = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="insights" className="mt-4">
             <Card className="border-primary/10 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
               <CardContent className="pt-6">
@@ -171,7 +198,7 @@ const Index = () => {
             </Card>
           </TabsContent>
         </Tabs>
-        
+
         {moodEntries.length > 0 && activeTab === "track" && (
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400">
