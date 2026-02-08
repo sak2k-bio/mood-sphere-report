@@ -19,12 +19,17 @@ The Google Sheet should have a header row with the following columns:
 | **Q5: Satisfaction** | Rating for Q5 | `Number (1-10)` |
 | **Triggers** | selected triggers | `String` |
 
-### Tab 2: `Users` (Authentication)
-Create a second tab named `Users` for credential storage.
+### Tab 2: `Users` (Authentication & Roles)
+Create a second tab named `Users` for credential storage and access control.
 
-| Username | Password | Full Name |
-| :--- | :--- | :--- |
-| john_doe | p@ssword123 | John Doe |
+| Username | Password | Full Name | Role |
+| :--- | :--- | :--- | :--- |
+| james_h | pass123 | James Harrison | admin |
+| john_doe | mood789 | John Doe | user |
+
+> [!NOTE]
+> - **admin**: Has access to the global "Admin" tab with birds-eye views of all users.
+> - **user**: Can only see their own "Track", "History", and "Insights" tabs.
 
 ## 🚨 Critical Security Warning: Service Accounts
 

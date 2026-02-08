@@ -2,15 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from 'next-themes';
-import MoodQuestionnaire from '../components/MoodQuestionnaire';
+import MoodQuestionnaire, { moodQuestions } from '../components/MoodQuestionnaire';
 import MoodGraph from '../components/MoodGraph';
 import ReportGenerator from '../components/ReportGenerator';
 import TriggerSelector from '../components/TriggerSelector';
+import AdminDashboard from '../components/AdminDashboard';
 import Auth from '../components/Auth';
 import { MoodEntry } from '../types';
-import { Moon, Sun, Loader2, LogOut } from 'lucide-react';
+import { Moon, Sun, Loader2, LogOut, Send, ShieldAlert } from 'lucide-react';
 import { fetchEntries, saveEntry } from '../lib/googleSheets';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from '@/components/ui/button';
@@ -19,8 +21,12 @@ const Index = () => {
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [activeTab, setActiveTab] = useState("track");
   const [selectedTriggers, setSelectedTriggers] = useState<string[]>([]);
-  const [user, setUser] = useState<{ username: string, fullName: string } | null>(null);
+  const [answers, setAnswers] = useState<number[]>(new Array(5).fill(5));
+  const [user, setUser] = useState<{ username: string, fullName: string, role: string } | null>(null);
+  const [adminData, setAdminData] = useState<{ entries: any[], users: any[] } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
   const { setTheme, theme } = useTheme();
   const { toast } = useToast();
 
@@ -29,11 +35,13 @@ const Index = () => {
     const authStatus = localStorage.getItem('isAuthenticated') === 'true';
     const savedUsername = localStorage.getItem('username');
     const savedFullName = localStorage.getItem('fullName');
+    const savedRole = localStorage.getItem('role') || 'user';
 
     if (authStatus && savedUsername && savedFullName) {
-      const activeUser = { username: savedUsername, fullName: savedFullName };
+      const activeUser = { username: savedUsername, fullName: savedFullName, role: savedRole };
       setUser(activeUser);
       loadData(activeUser.username);
+      if (savedRole === 'admin') loadAdminData();
     } else {
       setIsLoading(false);
     }
@@ -55,35 +63,61 @@ const Index = () => {
     }
   };
 
-  const handleAuthenticated = (authenticatedUser: { username: string, fullName: string }) => {
+  const loadAdminData = async () => {
+    try {
+      const response = await fetch('/api/mood-sync?action=admin_data');
+      if (response.ok) {
+        const data = await response.json();
+        setAdminData(data);
+      }
+    } catch (e) {
+      console.error("Admin data fetch error:", e);
+    }
+  };
+
+  const handleAuthenticated = (authenticatedUser: { username: string, fullName: string, role: string }) => {
     setUser(authenticatedUser);
     loadData(authenticatedUser.username);
+    if (authenticatedUser.role === 'admin') loadAdminData();
   };
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('username');
     localStorage.removeItem('fullName');
+    localStorage.removeItem('role');
     setUser(null);
     setMoodEntries([]);
+    setAdminData(null);
     setActiveTab("track");
   };
 
-  const handleMoodSubmit = async (entry: MoodEntry) => {
-    if (!user) return;
+  const handleMoodSubmit = async () => {
+    if (!user || isSubmitting) return;
+    setIsSubmitting(true);
 
-    const entryWithTriggers = {
-      ...entry,
+    const overallScore = parseFloat((answers.reduce((sum, val) => sum + val, 0) / answers.length).toFixed(1));
+
+    const entry: MoodEntry = {
+      date: new Date().toISOString(),
+      answers: answers.map((value, index) => ({
+        questionId: moodQuestions[index].id,
+        value
+      })),
+      overallScore,
       triggers: selectedTriggers
     };
 
     // Optimistic update
-    setMoodEntries(prev => [...prev, entryWithTriggers]);
+    setMoodEntries(prev => [...prev, entry]);
+
+    // Reset state early for UX
     setSelectedTriggers([]);
+    setAnswers(new Array(5).fill(5));
     setActiveTab("insights");
 
     // Sync to Google Sheets
-    const success = await saveEntry(entryWithTriggers, user.username);
+    const success = await saveEntry(entry, user.username);
     if (!success) {
       toast({
         title: "Sync Warning",
@@ -95,7 +129,15 @@ const Index = () => {
         title: "Synced Successfully",
         description: "Your mood log has been saved.",
       });
+      if (user.role === 'admin') loadAdminData(); // Refresh admin view
     }
+    setIsSubmitting(false);
+  };
+
+  const handleAnswerChange = (index: number, value: number) => {
+    const newAnswers = [...answers];
+    newAnswers[index] = value;
+    setAnswers(newAnswers);
   };
 
   const toggleTheme = () => {
@@ -123,7 +165,10 @@ const Index = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4">
           <div className="text-left font-sans">
             <h1 className="text-2xl md:text-4xl font-black text-primary mb-1 md:mb-2 tracking-tight text-shadow-sm">MoodSphere</h1>
-            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 font-medium">Hello, <span className="font-bold text-primary">{user.fullName}</span> 👋</p>
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 font-medium flex items-center gap-2">
+              Hello, <span className="font-bold text-primary">{user.fullName}</span> 👋
+              {user.role === 'admin' && <Badge className="bg-primary/20 text-primary hover:bg-primary/30 border-none px-2 py-0 h-5 text-[10px]">ADMIN</Badge>}
+            </p>
           </div>
 
           <div className="flex items-center space-x-3">
@@ -143,28 +188,49 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6 md:mb-10 bg-white/40 dark:bg-gray-800/40 backdrop-blur-md p-1.5 rounded-2xl shadow-inner border border-white/10">
+          <TabsList className={`grid w-full ${user.role === 'admin' ? 'grid-cols-4' : 'grid-cols-3'} mb-6 md:mb-10 bg-white/40 dark:bg-gray-800/40 backdrop-blur-md p-1.5 rounded-2xl shadow-inner border border-white/10`}>
             <TabsTrigger value="track" className="rounded-xl py-2.5 md:py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground transition-all duration-300 font-semibold tracking-wide">Track</TabsTrigger>
             <TabsTrigger value="history" className="rounded-xl py-2.5 md:py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground transition-all duration-300 font-semibold tracking-wide">History</TabsTrigger>
             <TabsTrigger value="insights" className="rounded-xl py-2.5 md:py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground transition-all duration-300 font-semibold tracking-wide">Insights</TabsTrigger>
+            {user.role === 'admin' && (
+              <TabsTrigger value="admin" className="rounded-xl py-2.5 md:py-3 data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-primary-foreground transition-all duration-300 font-semibold tracking-wide flex gap-2 items-center">
+                <ShieldAlert className="h-4 w-4" /> Admin
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="track" className="mt-4 animate-in fade-in zoom-in-95 duration-500">
-            {/* Centered Trigger Selector */}
-            <div className="max-w-2xl mx-auto mb-10">
-              <TriggerSelector
-                onSelectTriggers={setSelectedTriggers}
-                selectedTriggers={selectedTriggers}
-              />
+            {/* Top Control Bar: Triggers Left, Submit Right */}
+            <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
+              <div className="w-full md:w-2/3 lg:w-3/4">
+                <TriggerSelector
+                  onSelectTriggers={setSelectedTriggers}
+                  selectedTriggers={selectedTriggers}
+                />
+              </div>
+              <div className="w-full md:w-1/3 lg:w-1/4 flex flex-col gap-2">
+                <Button
+                  onClick={handleMoodSubmit}
+                  disabled={isSubmitting}
+                  size="lg"
+                  className="w-full shadow-lg hover:shadow-primary/20 transition-all duration-300 py-8 text-lg font-black uppercase tracking-tighter"
+                >
+                  {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5 mb-0.5" />}
+                  Submit Log
+                </Button>
+                <p className="text-[10px] text-center text-muted-foreground uppercase font-bold tracking-widest opacity-60">
+                  Ready to sync your day?
+                </p>
+              </div>
             </div>
 
-            {/* Questions Section - Layout handled internally by MoodQuestionnaire */}
-            <MoodQuestionnaire onSubmit={handleMoodSubmit} />
+            {/* Questions Section - Balanced Split */}
+            <MoodQuestionnaire answers={answers} onAnswerChange={handleAnswerChange} />
           </TabsContent>
 
           <TabsContent value="history" className="mt-4 animate-in fade-in duration-500">
             <Card className="border-primary/10 shadow-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm glass-card overflow-hidden">
-              <CardContent className="pt-8">
+              <CardContent className="pt-8 px-2 md:px-6">
                 {moodEntries.length > 0 ? (
                   <MoodGraph data={moodEntries} />
                 ) : (
@@ -196,6 +262,12 @@ const Index = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {user.role === 'admin' && adminData && (
+            <TabsContent value="admin" className="mt-4 animate-in fade-in duration-500">
+              <AdminDashboard allEntries={adminData.entries} allUsers={adminData.users} />
+            </TabsContent>
+          )}
         </Tabs>
 
         {moodEntries.length > 0 && activeTab === "track" && (

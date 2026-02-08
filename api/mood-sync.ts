@@ -22,13 +22,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const doc = new GoogleSpreadsheet(sheetId, auth);
         await doc.loadInfo();
 
-        // Tab Names expected: "MoodData" and "Users"
         const dataSheet = doc.sheetsByTitle['MoodData'] || doc.sheetsByIndex[0];
         const userSheet = doc.sheetsByTitle['Users'];
 
         const { action, username, password } = req.query;
 
-        // --- HANDLE LOGIN AS SEPARATE ACTION ---
+        // --- HANDLE LOGIN ---
         if (req.method === 'GET' && action === 'login') {
             if (!userSheet) return res.status(500).json({ error: 'Authentication sheet "Users" not found' });
 
@@ -40,12 +39,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     success: true,
                     user: {
                         username: user.get('Username'),
-                        fullName: user.get('Full Name')
+                        fullName: user.get('Full Name'),
+                        role: user.get('Role') || 'user' // Default to user if not specified
                     }
                 });
             } else {
                 return res.status(401).json({ error: 'Invalid username or password' });
             }
+        }
+
+        // --- HANDLE ADMIN DATA FETCH ---
+        if (req.method === 'GET' && action === 'admin_data') {
+            if (!userSheet) return res.status(500).json({ error: 'Users sheet not found' });
+
+            const rows = await dataSheet.getRows();
+            const users = await userSheet.getRows();
+
+            const allEntries = rows.map(row => ({
+                Username: row.get('Username'),
+                Date: row.get('Date'),
+                "Overall Score": row.get('Overall Score'),
+                "Q1: Overall Mood": row.get('Q1: Overall Mood'),
+                "Q2: Stress": row.get('Q2: Stress'),
+                "Q3: Social": row.get('Q3: Social'),
+                "Q4: Energy": row.get('Q4: Energy'),
+                "Q5: Satisfaction": row.get('Q5: Satisfaction'),
+                Triggers: row.get('Triggers'),
+            }));
+
+            const userData = users.map(u => ({
+                username: u.get('Username'),
+                fullName: u.get('Full Name'),
+                role: u.get('Role') || 'user'
+            }));
+
+            return res.status(200).json({ entries: allEntries, users: userData });
         }
 
         // --- HANDLE GET (FETCH ENTRIES FOR SPECIFIC USER) ---
@@ -69,10 +97,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json(userEntries);
         }
 
-        // --- HANDLE POST (SAVE ENTRY WITH USERNAME) ---
+        // --- HANDLE POST (SAVE ENTRY) ---
         if (req.method === 'POST') {
             const data = req.body;
-            // Ensure every row has the Username
             if (Array.isArray(data)) {
                 await dataSheet.addRows(data);
             } else {

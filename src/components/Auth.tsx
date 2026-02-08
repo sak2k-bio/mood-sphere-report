@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Lock, User } from 'lucide-react';
 
 interface AuthProps {
-  onAuthenticated: (user: { username: string, fullName: string }) => void;
+  onAuthenticated: (user: { username: string, fullName: string, role: string }) => void;
 }
 
 const Auth: React.FC<AuthProps> = ({ onAuthenticated }) => {
@@ -28,6 +28,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthenticated }) => {
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('username', data.user.username);
         localStorage.setItem('fullName', data.user.fullName);
+        localStorage.setItem('role', data.user.role);
         onAuthenticated(data.user);
       } else {
         const data = await response.json();

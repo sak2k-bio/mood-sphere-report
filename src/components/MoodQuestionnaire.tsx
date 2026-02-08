@@ -1,16 +1,15 @@
 
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
+import React from 'react';
 import MoodSlider from './MoodSlider';
-import { useToast } from "@/components/ui/use-toast";
-import { MoodEntry, Question } from '../types';
+import { Question } from '../types';
 import { format } from 'date-fns';
 
 interface MoodQuestionnaireProps {
-  onSubmit: (entry: MoodEntry) => void;
+  answers: number[];
+  onAnswerChange: (index: number, value: number) => void;
 }
 
-const questions: (Question & { description: string })[] = [
+export const moodQuestions: (Question & { description: string })[] = [
   {
     id: 1,
     text: "How would you rate your overall mood today?",
@@ -38,8 +37,7 @@ const questions: (Question & { description: string })[] = [
   },
 ];
 
-// Map question ids to question types for the emoji selector
-const questionTypes: { [key: number]: 'general' | 'stress' | 'social' | 'energy' | 'satisfaction' } = {
+export const questionTypes: { [key: number]: 'general' | 'stress' | 'social' | 'energy' | 'satisfaction' } = {
   1: 'general',
   2: 'stress',
   3: 'social',
@@ -47,36 +45,8 @@ const questionTypes: { [key: number]: 'general' | 'stress' | 'social' | 'energy'
   5: 'satisfaction'
 };
 
-const MoodQuestionnaire: React.FC<MoodQuestionnaireProps> = ({ onSubmit }) => {
-  const [answers, setAnswers] = useState<number[]>(questions.map(() => 5));
-  const { toast } = useToast();
+const MoodQuestionnaire: React.FC<MoodQuestionnaireProps> = ({ answers, onAnswerChange }) => {
   const currentDate = new Date();
-
-  const handleAnswerChange = (index: number, value: number) => {
-    const newAnswers = [...answers];
-    newAnswers[index] = value;
-    setAnswers(newAnswers);
-  };
-
-  const handleSubmit = () => {
-    const overallScore = parseFloat((answers.reduce((sum, val) => sum + val, 0) / answers.length).toFixed(1));
-
-    const entry: MoodEntry = {
-      date: currentDate.toISOString(),
-      answers: answers.map((value, index) => ({
-        questionId: questions[index].id,
-        value
-      })),
-      overallScore
-    };
-
-    onSubmit(entry);
-
-    toast({
-      title: "Mood log saved",
-      description: `Your mood score: ${overallScore}/10`,
-    });
-  };
 
   return (
     <div className="w-full mx-auto">
@@ -91,13 +61,13 @@ const MoodQuestionnaire: React.FC<MoodQuestionnaireProps> = ({ onSubmit }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 items-start">
         {/* Left Column: 3 Questions */}
         <div className="space-y-6">
-          {questions.slice(0, 3).map((question, index) => (
+          {moodQuestions.slice(0, 3).map((question, index) => (
             <MoodSlider
               key={question.id}
               question={question.text}
               description={question.description}
               value={answers[index]}
-              onChange={(value) => handleAnswerChange(index, value)}
+              onChange={(value) => onAnswerChange(index, value)}
               questionType={questionTypes[question.id]}
             />
           ))}
@@ -105,22 +75,16 @@ const MoodQuestionnaire: React.FC<MoodQuestionnaireProps> = ({ onSubmit }) => {
 
         {/* Right Column: 2 Questions */}
         <div className="space-y-6">
-          {questions.slice(3).map((question, index) => (
+          {moodQuestions.slice(3).map((question, index) => (
             <MoodSlider
               key={question.id}
               question={question.text}
               description={question.description}
               value={answers[index + 3]}
-              onChange={(value) => handleAnswerChange(index + 3, value)}
+              onChange={(value) => onAnswerChange(index + 3, value)}
               questionType={questionTypes[question.id]}
             />
           ))}
-
-          <div className="pt-4">
-            <Button onClick={handleSubmit} size="lg" className="w-full shadow-lg hover:shadow-primary/20 transition-all duration-300 py-6 text-lg font-bold">
-              Submit Log
-            </Button>
-          </div>
         </div>
       </div>
     </div>
