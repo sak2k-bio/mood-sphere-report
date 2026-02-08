@@ -28,8 +28,22 @@ Create a second tab named `Users` for credential storage and access control.
 | john_doe | mood789 | John Doe | user |
 
 > [!NOTE]
-> - **admin**: Has access to the global "Admin" tab with birds-eye views of all users.
-> - **user**: Can only see their own "Track", "History", and "Insights" tabs.
+> - **admin**: Has access to the global "Admin" tab.
+> - **user**: Standard dashboard access.
+
+### Tab 3: `JournalData` [NEW]
+Stores free-form emotional journal entries.
+
+| Username | Date | Content | DayNumber |
+| :--- | :--- | :--- | :--- |
+| john_doe | 2024-02-08T... | I felt very productive... | 1 |
+
+### Tab 4: `ThoughtRecordData` [NEW]
+Stores structured CBT thought records.
+
+| Username | Date | DayNumber | Situation | Emotion | IntensityScore | AutomaticThought | EvidenceFor | EvidenceAgainst | AlternativeThought | BehaviorResponse | EmotionAfterIntensity |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| john_doe | 2024-02-08 | 1 | Meeting... | Anxious | 80 | I'll mess up | I was late | I prepared well | I can handle it | Took a breath | 40 |
 
 ## 🚨 Critical Security Warning: Service Accounts
 

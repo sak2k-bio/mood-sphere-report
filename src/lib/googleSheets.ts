@@ -1,8 +1,10 @@
 
-import { MoodEntry } from '../types';
+import { MoodEntry, JournalEntry, ThoughtRecord } from '../types';
 
 // Points to the secure Vercel Serverless Function
 const ENDPOINT = '/api/mood-sync';
+
+// --- MOOD ENTRIES ---
 
 export const fetchEntries = async (username: string): Promise<MoodEntry[]> => {
     try {
@@ -11,7 +13,6 @@ export const fetchEntries = async (username: string): Promise<MoodEntry[]> => {
 
         const data = await response.json();
 
-        // Parse data from sheet format back to MoodEntry format
         return data.map((item: any) => ({
             date: item.Date,
             overallScore: parseFloat(item["Overall Score"]),
@@ -26,7 +27,6 @@ export const fetchEntries = async (username: string): Promise<MoodEntry[]> => {
         }));
     } catch (error) {
         console.error('Error fetching from Google Sheets:', error);
-        // Fallback to local storage if API fails (scoped by username)
         const saved = localStorage.getItem(`moodEntries_${username}`);
         return saved ? JSON.parse(saved) : [];
     }
@@ -48,13 +48,10 @@ export const saveEntry = async (entry: MoodEntry, username: string): Promise<boo
 
         const response = await fetch(ENDPOINT, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
 
-        // Cache locally even if fetch fails, but scope by username
         const saved = localStorage.getItem(`moodEntries_${username}`);
         const entries = saved ? JSON.parse(saved) : [];
         localStorage.setItem(`moodEntries_${username}`, JSON.stringify([...entries, entry]));
@@ -62,6 +59,80 @@ export const saveEntry = async (entry: MoodEntry, username: string): Promise<boo
         return response.ok;
     } catch (error) {
         console.error('Error saving to Google Sheets:', error);
+        return false;
+    }
+};
+
+// --- JOURNAL ENTRIES ---
+
+export const fetchJournal = async (username: string): Promise<JournalEntry[]> => {
+    try {
+        const response = await fetch(`${ENDPOINT}?action=fetch_journal&username=${encodeURIComponent(username)}`);
+        if (!response.ok) throw new Error('Failed to fetch journal');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching journal:', error);
+        return [];
+    }
+};
+
+export const saveJournal = async (entry: JournalEntry): Promise<boolean> => {
+    try {
+        const payload = {
+            Username: entry.username,
+            Date: entry.date,
+            Content: entry.content,
+            DayNumber: entry.dayNumber
+        };
+        const response = await fetch(`${ENDPOINT}?action=save_journal`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        return response.ok;
+    } catch (error) {
+        console.error('Error saving journal:', error);
+        return false;
+    }
+};
+
+// --- THOUGHT RECORDS ---
+
+export const fetchThoughtRecords = async (username: string): Promise<ThoughtRecord[]> => {
+    try {
+        const response = await fetch(`${ENDPOINT}?action=fetch_thought_records&username=${encodeURIComponent(username)}`);
+        if (!response.ok) throw new Error('Failed to fetch thought records');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching thought records:', error);
+        return [];
+    }
+};
+
+export const saveThoughtRecord = async (record: ThoughtRecord): Promise<boolean> => {
+    try {
+        const payload = {
+            Username: record.username,
+            Date: record.date,
+            DayNumber: record.dayNumber,
+            Situation: record.situation,
+            Emotion: record.emotion,
+            IntensityScore: record.intensityScore,
+            AutomaticThought: record.automaticThought,
+            EvidenceFor: record.evidenceFor,
+            EvidenceAgainst: record.evidenceAgainst,
+            AlternativeThought: record.alternativeThought,
+            BehaviorResponse: record.behaviorResponse,
+            EmotionAfterIntensity: record.emotionAfterIntensity
+        };
+        const response = await fetch(`${ENDPOINT}?action=save_thought_record`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        return response.ok;
+    } catch (error) {
+        console.error('Error saving thought record:', error);
         return false;
     }
 };

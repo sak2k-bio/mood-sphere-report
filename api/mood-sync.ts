@@ -24,6 +24,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const dataSheet = doc.sheetsByTitle['MoodData'] || doc.sheetsByIndex[0];
         const userSheet = doc.sheetsByTitle['Users'];
+        const journalSheet = doc.sheetsByTitle['JournalData'];
+        const thoughtRecordSheet = doc.sheetsByTitle['ThoughtRecordData'];
 
         const { action, username, password } = req.query;
 
@@ -40,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     user: {
                         username: user.get('Username'),
                         fullName: user.get('Full Name'),
-                        role: user.get('Role') || 'user' // Default to user if not specified
+                        role: user.get('Role') || 'user'
                     }
                 });
             } else {
@@ -52,8 +54,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (req.method === 'GET' && action === 'admin_data') {
             if (!userSheet) return res.status(500).json({ error: 'Users sheet not found' });
 
-            const rows = await dataSheet.getRows();
-            const users = await userSheet.getRows();
+            const [rows, users, journals, thoughts] = await Promise.all([
+                dataSheet.getRows(),
+                userSheet.getRows(),
+                journalSheet ? journalSheet.getRows() : Promise.resolve([]),
+                thoughtRecordSheet ? thoughtRecordSheet.getRows() : Promise.resolve([])
+            ]);
 
             const allEntries = rows.map(row => ({
                 Username: row.get('Username'),
@@ -73,11 +79,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 role: u.get('Role') || 'user'
             }));
 
-            return res.status(200).json({ entries: allEntries, users: userData });
+            const journalData = journals.map(r => ({
+                username: r.get('Username'),
+                date: r.get('Date'),
+                content: r.get('Content'),
+                dayNumber: r.get('DayNumber')
+            }));
+
+            const thoughtData = thoughts.map(r => ({
+                username: r.get('Username'),
+                date: r.get('Date'),
+                dayNumber: r.get('DayNumber'),
+                situation: r.get('Situation'),
+                emotion: r.get('Emotion'),
+                intensityScore: r.get('IntensityScore'),
+                automaticThought: r.get('AutomaticThought'),
+                evidenceFor: r.get('EvidenceFor'),
+                evidenceAgainst: r.get('EvidenceAgainst'),
+                alternativeThought: r.get('AlternativeThought'),
+                behaviorResponse: r.get('BehaviorResponse'),
+                emotionAfterIntensity: r.get('EmotionAfterIntensity')
+            }));
+
+            return res.status(200).json({
+                entries: allEntries,
+                users: userData,
+                journalEntries: journalData,
+                thoughtRecords: thoughtData
+            });
         }
 
-        // --- HANDLE GET (FETCH ENTRIES FOR SPECIFIC USER) ---
-        if (req.method === 'GET') {
+        // --- HANDLE GET (EXISTING MOOD ENTRIES) ---
+        if (req.method === 'GET' && !action) {
             if (!username) return res.status(400).json({ error: 'Username required' });
 
             const rows = await dataSheet.getRows();
@@ -97,7 +130,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json(userEntries);
         }
 
-        // --- HANDLE POST (SAVE ENTRY) ---
+        // --- HANDLE JOURNAL ACTIONS ---
+        if (action === 'fetch_journal' && journalSheet) {
+            const rows = await journalSheet.getRows();
+            const entries = rows
+                .filter(r => r.get('Username') === username)
+                .map(r => ({
+                    username: r.get('Username'),
+                    date: r.get('Date'),
+                    content: r.get('Content'),
+                    dayNumber: r.get('DayNumber')
+                }));
+            return res.status(200).json(entries);
+        }
+
+        if (req.method === 'POST' && action === 'save_journal' && journalSheet) {
+            await journalSheet.addRow(req.body);
+            return res.status(200).json({ success: true });
+        }
+
+        // --- HANDLE THOUGHT RECORD ACTIONS ---
+        if (action === 'fetch_thought_records' && thoughtRecordSheet) {
+            const rows = await thoughtRecordSheet.getRows();
+            const entries = rows
+                .filter(r => r.get('Username') === username)
+                .map(r => ({
+                    username: r.get('Username'),
+                    date: r.get('Date'),
+                    dayNumber: r.get('DayNumber'),
+                    situation: r.get('Situation'),
+                    emotion: r.get('Emotion'),
+                    intensityScore: r.get('IntensityScore'),
+                    automaticThought: r.get('AutomaticThought'),
+                    evidenceFor: r.get('EvidenceFor'),
+                    evidenceAgainst: r.get('EvidenceAgainst'),
+                    alternativeThought: r.get('AlternativeThought'),
+                    behaviorResponse: r.get('BehaviorResponse'),
+                    emotionAfterIntensity: r.get('EmotionAfterIntensity')
+                }));
+            return res.status(200).json(entries);
+        }
+
+        if (req.method === 'POST' && action === 'save_thought_record' && thoughtRecordSheet) {
+            await thoughtRecordSheet.addRow(req.body);
+            return res.status(200).json({ success: true });
+        }
+
+        // --- HANDLE POST (DEFAULT MOOD ENTRY) ---
         if (req.method === 'POST') {
             const data = req.body;
             if (Array.isArray(data)) {
