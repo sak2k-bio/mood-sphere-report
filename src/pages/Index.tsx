@@ -330,15 +330,27 @@ const Index = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="flex md:grid md:w-full items-center justify-start md:justify-center overflow-x-auto no-scrollbar mb-8 md:mb-12 bg-white/40 dark:bg-gray-800/40 backdrop-blur-md p-1.5 rounded-2xl shadow-inner border border-white/10 gap-1">
-            <TabsTrigger value="track" className="rounded-xl py-2 px-4 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white font-semibold">Track</TabsTrigger>
-            <TabsTrigger value="journal" className="rounded-xl py-2 px-4 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white font-semibold flex gap-2 shrink-0"><BookText className="h-4 w-4" /> Journal</TabsTrigger>
-            <TabsTrigger value="thoughts" className="rounded-xl py-2 px-4 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white font-semibold flex gap-2 shrink-0"><BrainCircuit className="h-4 w-4" /> CBT</TabsTrigger>
-            <TabsTrigger value="medication" className="rounded-xl py-2 px-4 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white font-semibold flex gap-2 shrink-0"><Pill className="h-4 w-4" /> Medication</TabsTrigger>
-            <TabsTrigger value="history" className="rounded-xl py-2 px-4 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white font-semibold shrink-0">History</TabsTrigger>
-            <TabsTrigger value="insights" className="rounded-xl py-2 px-4 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white font-semibold shrink-0">Insights</TabsTrigger>
+          <TabsList className={`grid w-full ${user.role === 'admin' ? 'grid-cols-7' : 'grid-cols-6'} mb-8 md:mb-12 bg-white/40 dark:bg-gray-800/40 backdrop-blur-md p-1 rounded-2xl shadow-inner border border-white/10 gap-0.5`}>
+            <TabsTrigger value="track" className="rounded-xl py-2 px-0 text-[10px] sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-white font-semibold">Track</TabsTrigger>
+            <TabsTrigger value="journal" className="rounded-xl py-2 px-0 text-[10px] sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-white font-semibold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2">
+              <BookText className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden xs:inline">Journal</span><span className="xs:hidden">Daily</span>
+            </TabsTrigger>
+            <TabsTrigger value="thoughts" className="rounded-xl py-2 px-0 text-[10px] sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-white font-semibold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2">
+              <BrainCircuit className="h-3 w-3 sm:h-4 sm:w-4" /> CBT
+            </TabsTrigger>
+            <TabsTrigger value="medication" className="rounded-xl py-2 px-0 text-[10px] sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-white font-semibold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2">
+              <Pill className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden xs:inline">Medication</span><span className="xs:hidden">Meds</span>
+            </TabsTrigger>
+            <TabsTrigger value="history" className="rounded-xl py-2 px-0 text-[10px] sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-white font-semibold">
+              <span className="hidden xs:inline">History</span><span className="xs:hidden">Logs</span>
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="rounded-xl py-2 px-0 text-[10px] sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-white font-semibold">
+              <span className="hidden xs:inline">Insights</span><span className="xs:hidden">Data</span>
+            </TabsTrigger>
             {user.role === 'admin' && (
-              <TabsTrigger value="admin" className="rounded-xl py-2 px-4 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-white font-semibold flex gap-1 shrink-0"><ShieldAlert className="h-4 w-4" /> Admin</TabsTrigger>
+              <TabsTrigger value="admin" className="rounded-xl py-2 px-0 text-[10px] sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-white font-semibold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1">
+                <ShieldAlert className="h-3 w-3 sm:h-4 sm:w-4" /> Admin
+              </TabsTrigger>
             )}
           </TabsList>
 
