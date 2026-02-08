@@ -223,6 +223,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         return Array.from(set).sort();
     }, [allEntries]);
 
+    // --- HELPERS ---
+    const safeFormat = (dateStr: string | undefined | null, formatStr: string) => {
+        if (!dateStr) return 'N/A';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return 'N/A';
+            return format(date, formatStr);
+        } catch (e) {
+            return 'N/A';
+        }
+    };
+
     // --- MODAL COMPONENT ---
     const UserDetailModal = ({ user }: { user: any }) => {
         const stats = user.stats;
@@ -360,7 +372,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 {stats.allMedLogs.map((l, i) => (
                                                     <div key={i} className="flex justify-between items-center p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-500/5 text-xs">
                                                         <span className="font-bold">{l.medicationName}</span>
-                                                        <span className="text-muted-foreground dark:text-foreground/60">{format(new Date(l.timestamp), 'MMM d, h:mm a')}</span>
+                                                        <span className="text-muted-foreground dark:text-foreground/60">{safeFormat(l.timestamp, 'MMM d, h:mm a')}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -384,7 +396,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         <div key={i} className="p-5 rounded-3xl bg-destructive/[0.02] border border-destructive/5 space-y-4">
                                             <div className="flex justify-between">
                                                 <Badge className="bg-destructive/10 text-destructive border-none text-[9px] uppercase font-black">{t.emotion}</Badge>
-                                                <span className="text-[10px] text-muted-foreground dark:text-foreground/60 opacity-50 dark:opacity-80">{format(new Date(t.date), 'MMM d')}</span>
+                                                <span className="text-[10px] text-muted-foreground dark:text-foreground/60 opacity-50 dark:opacity-80">{safeFormat(t.date, 'MMM d')}</span>
                                             </div>
                                             <p className="text-xs font-bold leading-tight line-clamp-2">"{t.situation}"</p>
                                             <div className="flex items-center gap-2">
@@ -413,7 +425,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     <div key={i} className="p-6 rounded-3xl bg-primary/[0.03] border border-primary/5 space-y-3">
                                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-40 dark:opacity-70">
                                             <span>Entry #{j.dayNumber || stats.allJournals.length - i}</span>
-                                            <span>{format(new Date(j.date), 'MMM d, p')}</span>
+                                            <span>{safeFormat(j.date, 'MMM d, p')}</span>
                                         </div>
                                         <p className="text-sm italic font-medium leading-relaxed">"{j.content}"</p>
                                     </div>

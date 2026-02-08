@@ -5,7 +5,7 @@ This document provides instant instructions for tweaking the **Mood Sphere** app
 ## 1. Component Sizes & Layout
 - **Main Dashboard**: Controlled in [Index.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/pages/Index.tsx). The dashboard uses a tabbed navigation system.
 - **Submit Daily Log Button**: Large primary action button with a purple gradient and shimmer effect. Styling is in [Index.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/pages/Index.tsx) using Tailwind and shimmer utility in [index.css](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/index.css).
-- **Medication Tracker**: [MedicationTracker.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/components/MedicationTracker.tsx). Displays prescriptions and a logging button.
+- **Medication Tracker**: [MedicationTracker.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/components/MedicationTracker.tsx). Displays prescriptions and a **chronological intake history**.
 
 ## 2. Colors & Visual Identity
 Styles are managed in [tailwind.config.ts](file:///e:/Code%20projects/github%20projects/mood-sphere-report/tailwind.config.ts).
@@ -26,7 +26,11 @@ Backend logic in [api/mood-sync.ts](file:///e:/Code%20projects/github%20projects
 - `action=fetch_prescriptions`: [FIXED] Fetches active prescriptions. Uses `medicationName`, `dosage`, `schedule`.
 - `action=add_prescription`: Admin tool to assign new medication records.
 - `action=save_med_log`: Records daily intake with timestamping.
+- `action=fetch_med_logs`: [NEW] Pulls a user's chronological intake history.
 - `action=admin_data`: Aggregates all clinical metrics. Enforces patient isolation by **AssociatedPsychiatrist**.
+
+> [!TIP]
+> **Robustness**: All clinical components use an internal `safeFormat` helper (in `AdminDashboard.tsx`, `ThoughtRecord.tsx`, etc.) to prevent crashes from empty/malformed Google Sheets rows.
 
 ## 6. Mobile UI Optimization
 - **Navigation Tabs**: Switched from fixed grid to horizontally scrollable flex container in [Index.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/pages/Index.tsx). Uses `overflow-x-auto` and `no-scrollbar`.

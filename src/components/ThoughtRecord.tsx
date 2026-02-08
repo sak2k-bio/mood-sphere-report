@@ -261,7 +261,14 @@ const ThoughtRecord: React.FC<ThoughtRecordProps> = ({ records, onSave, isSubmit
                                 [...records].reverse().map((record, idx) => (
                                     <TableRow key={idx} className="group hover:bg-primary/[0.02] transition-colors">
                                         <TableCell className="text-xs font-medium">
-                                            {format(new Date(record.date), 'MMM d, yy')}<br />
+                                            {(() => {
+                                                try {
+                                                    const d = new Date(record.date);
+                                                    return isNaN(d.getTime()) ? 'N/A' : format(d, 'MMM d, yy');
+                                                } catch (e) {
+                                                    return 'N/A';
+                                                }
+                                            })()}<br />
                                             <span className="text-[10px] text-muted-foreground opacity-60 font-mono">
                                                 Log #{records.length - idx}
                                             </span>

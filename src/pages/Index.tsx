@@ -26,7 +26,7 @@ import {
   fetchEntries, saveEntry,
   fetchJournal, saveJournal,
   fetchThoughtRecords, saveThoughtRecord,
-  fetchPrescriptions, saveMedicationLog // Added fetchPrescriptions, saveMedicationLog
+  fetchPrescriptions, saveMedicationLog, fetchMedLogs // Added fetchMedLogs
 } from '../lib/googleSheets';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,8 @@ const Index = () => {
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [thoughtRecords, setThoughtRecords] = useState<ThoughtRecordType[]>([]);
-  const [prescriptions, setPrescriptions] = useState<MedicationPrescription[]>([]); // Added
+  const [prescriptions, setPrescriptions] = useState<MedicationPrescription[]>([]);
+  const [medLogs, setMedLogs] = useState<MedicationLog[]>([]); // Added
 
   const [activeTab, setActiveTab] = useState("track");
   const [selectedTriggers, setSelectedTriggers] = useState<string[]>([]);
@@ -94,16 +95,18 @@ const Index = () => {
           setPrescriptions(data.prescriptions.filter((e: any) => e.username === username));
         }
       } else {
-        const [moods, journal, thoughts, prescriptionsData] = await Promise.all([ // Added prescriptionsData
+        const [moods, journal, thoughts, prescriptionsData, logsData] = await Promise.all([
           fetchEntries(username),
           fetchJournal(username),
           fetchThoughtRecords(username),
-          fetchPrescriptions(username) // Added fetchPrescriptions
+          fetchPrescriptions(username),
+          fetchMedLogs(username) // Added
         ]);
         setMoodEntries(moods);
         setJournalEntries(journal);
         setThoughtRecords(thoughts);
-        setPrescriptions(prescriptionsData); // Added
+        setPrescriptions(prescriptionsData);
+        setMedLogs(logsData); // Added
       }
     } catch (error) {
       toast({
@@ -139,7 +142,8 @@ const Index = () => {
     setMoodEntries([]);
     setJournalEntries([]);
     setThoughtRecords([]);
-    setPrescriptions([]); // Added
+    setPrescriptions([]);
+    setMedLogs([]); // Added
     setAdminData(null);
     setActiveTab("track");
   };
@@ -227,7 +231,8 @@ const Index = () => {
 
     if (success) {
       toast({ title: "Medication Logged", description: `${medicationName} taken.` });
-      // Optionally, refresh admin data if user is admin
+      // Refresh logs
+      setMedLogs(prev => [...prev, logEntry]);
       if (user.role === 'admin') loadAdminData(user.username);
     } else {
       toast({ title: "Error", description: "Failed to log medication.", variant: "destructive" });
@@ -374,8 +379,13 @@ const Index = () => {
             <ThoughtRecord records={thoughtRecords} onSave={handleThoughtRecordSave} isSubmitting={isSubmitting} />
           </TabsContent>
 
-          <TabsContent value="medication" className="mt-4"> {/* Added Medication Tab Content */}
-            <MedicationTracker prescriptions={prescriptions} onLogMedication={handleLogMedication} isSubmitting={isSubmitting} />
+          <TabsContent value="medication" className="mt-4">
+            <MedicationTracker
+              prescriptions={prescriptions}
+              medLogs={medLogs} // Added
+              onLogMedication={handleLogMedication}
+              isSubmitting={isSubmitting}
+            />
           </TabsContent>
 
           <TabsContent value="history" className="mt-4 animate-in fade-in duration-500">

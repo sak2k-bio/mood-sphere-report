@@ -86,7 +86,14 @@ const EmotionalJournal: React.FC<EmotionalJournalProps> = ({ entries, onSave, is
                                                     </span>
                                                 </div>
                                                 <span className="text-xs text-muted-foreground font-medium italic">
-                                                    {format(new Date(entry.date), 'MMMM d, yyyy • h:mm a')}
+                                                    {(() => {
+                                                        try {
+                                                            const d = new Date(entry.date);
+                                                            return isNaN(d.getTime()) ? 'N/A' : format(d, 'MMMM d, yyyy • h:mm a');
+                                                        } catch (e) {
+                                                            return 'N/A';
+                                                        }
+                                                    })()}
                                                 </span>
                                             </div>
                                             <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap font-medium font-serif bg-primary/5 p-4 rounded-xl border border-primary/5">

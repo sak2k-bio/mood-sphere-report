@@ -102,26 +102,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .filter(r => authorizedUsernames.has(r.get('Username')))
                 .map(r => ({
                     username: r.get('Username'),
-                    date: r.get('Date'),
-                    content: r.get('Content'),
-                    dayNumber: r.get('DayNumber')
+                    date: r.get('Date') || r.get('date') || new Date().toISOString(),
+                    content: r.get('Content') || r.get('content') || '',
+                    dayNumber: r.get('DayNumber') || r.get('dayNumber')
                 }));
 
             const thoughtData = thoughts
                 .filter(r => authorizedUsernames.has(r.get('Username')))
                 .map(r => ({
                     username: r.get('Username'),
-                    date: r.get('Date'),
-                    dayNumber: r.get('DayNumber'),
-                    situation: r.get('Situation'),
-                    emotion: r.get('Emotion'),
-                    intensityScore: r.get('IntensityScore'),
-                    automaticThought: r.get('AutomaticThought'),
-                    evidenceFor: r.get('EvidenceFor'),
-                    evidenceAgainst: r.get('EvidenceAgainst'),
-                    alternativeThought: r.get('AlternativeThought'),
-                    behaviorResponse: r.get('BehaviorResponse'),
-                    emotionAfterIntensity: r.get('EmotionAfterIntensity')
+                    date: r.get('Date') || r.get('date') || new Date().toISOString(),
+                    dayNumber: r.get('DayNumber') || r.get('dayNumber'),
+                    situation: r.get('Situation') || r.get('situation') || '',
+                    emotion: r.get('Emotion') || r.get('emotion') || '',
+                    intensityScore: r.get('IntensityScore') || r.get('intensityScore') || 0,
+                    automaticThought: r.get('AutomaticThought') || r.get('automaticThought') || '',
+                    evidenceFor: r.get('EvidenceFor') || r.get('evidenceFor') || '',
+                    evidenceAgainst: r.get('EvidenceAgainst') || r.get('evidenceAgainst') || '',
+                    alternativeThought: r.get('AlternativeThought') || r.get('alternativeThought') || '',
+                    behaviorResponse: r.get('BehaviorResponse') || r.get('behaviorResponse') || '',
+                    emotionAfterIntensity: r.get('EmotionAfterIntensity') || r.get('emotionAfterIntensity') || 0
                 }));
 
             const prescriptionData = prescriptions
@@ -138,8 +138,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .filter(l => authorizedUsernames.has(l.get('Username')))
                 .map(l => ({
                     username: l.get('Username'),
-                    medicationName: l.get('MedicationName'),
-                    timestamp: l.get('Timestamp')
+                    medicationName: l.get('medicationName') || l.get('MedicationName') || '',
+                    timestamp: l.get('Timestamp') || l.get('timestamp') || new Date().toISOString()
                 }));
 
             return res.status(200).json({
@@ -245,6 +245,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 Status: data.status || 'Active'
             });
             return res.status(200).json({ success: true });
+        }
+
+        if (req.method === 'GET' && action === 'fetch_med_logs' && medLogSheet) {
+            const rows = await medLogSheet.getRows();
+            const entries = rows
+                .filter(l => l.get('Username') === username)
+                .map(l => ({
+                    username: l.get('Username'),
+                    medicationName: l.get('medicationName') || l.get('MedicationName') || '',
+                    timestamp: l.get('Timestamp') || l.get('timestamp') || new Date().toISOString()
+                }));
+            return res.status(200).json(entries);
         }
 
         if (req.method === 'POST' && action === 'save_med_log' && medLogSheet) {

@@ -150,6 +150,16 @@ export const fetchPrescriptions = async (username: string): Promise<any[]> => {
     }
 };
 
+export const fetchMedLogs = async (username: string): Promise<any[]> => {
+    try {
+        const response = await fetch(`${ENDPOINT}?action=fetch_med_logs&username=${encodeURIComponent(username)}`);
+        if (!response.ok) throw new Error('Failed to fetch medication logs');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching medication logs:', error);
+        return [];
+    }
+};
 
 export const saveMedicationLog = async (log: any): Promise<boolean> => {
     try {
