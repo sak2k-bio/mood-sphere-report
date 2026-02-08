@@ -28,7 +28,7 @@ const EmotionalJournal: React.FC<EmotionalJournalProps> = ({ entries, onSave, is
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row gap-8">
                 {/* Input Section */}
-                <Card className="w-full md:w-5/12 border-primary/10 shadow-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm h-fit sticky top-24">
+                <Card className="w-full md:w-5/12 border-primary/10 shadow-xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-md h-fit md:sticky md:top-32 mb-8 md:mb-0">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
                             <PenTool className="h-5 w-5" /> Express Yourself

@@ -218,6 +218,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ success: true });
         }
 
+        // --- HANDLE MEDICATION ACTIONS ---
+        if (req.method === 'POST' && action === 'add_prescription' && prescriptionSheet) {
+            const data = req.body;
+            // Payload should match: { Username, MedicationName, Dosage, Status }
+            await prescriptionSheet.addRow({
+                Username: data.username,
+                MedicationName: data.medicationName,
+                Dosage: data.dosage,
+                Status: data.status || 'Active'
+            });
+            return res.status(200).json({ success: true });
+        }
+
         // --- HANDLE POST (DEFAULT MOOD ENTRY) ---
         if (req.method === 'POST') {
             const data = req.body;

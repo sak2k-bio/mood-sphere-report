@@ -24,24 +24,33 @@ Styles are managed in [tailwind.config.ts](file:///e:/Code%20projects/github%20p
 ## 5. API Actions & Synchronization
 Backend logic in [api/mood-sync.ts](file:///e:/Code%20projects/github%20projects/mood-sphere-report/api/mood-sync.ts):
 - `action=fetch_prescriptions`: Fetches active prescriptions for a user.
+- `action=add_prescription`: [NEW] Admin tool to assign medication to specific patients.
 - `action=save_med_log`: Records medication intake.
-- `action=admin_data`: Aggregates all user metrics, including medication adherence.
+- `action=admin_data`: Aggregates all user metrics. Includes server-side isolation by **AssociatedPsychiatrist**.
 
 ## 6. Mobile UI Optimization
 - **Navigation Tabs**: Switched from fixed grid to horizontally scrollable flex container in [Index.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/pages/Index.tsx). Uses `overflow-x-auto` and `no-scrollbar`.
-- **Responsive Modal**: Admin User Detail Modal ([AdminDashboard.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/components/AdminDashboard.tsx)) uses `max-h-[92vh]` and reduced mobile padding (`p-5`) to ensure content fits small screens perfectly.
+- **Responsive Layouts**: 
+    - **Journal**: Added `md:sticky` logic in [EmotionalJournal.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/components/EmotionalJournal.tsx) to prevent mobile sticky overlap.
+    - **Admin Modal**: Uses `max-h-[92vh]` and reduced mobile padding (`p-5`) in [AdminDashboard.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/components/AdminDashboard.tsx).
 
-## 7. Premium UI Utilities
-- **Animations**: Defined in [index.css](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/index.css).
-    - `animate-shimmer`: Used on primary buttons for subtle motion.
-    - `glass-card`: Global backdrop-blur utility for a premium, translucent look.
-    - `text-shadow-sm`: Subtle elevation for headers.
+## 7. Multi-Admin Infrastructure
+- **Data Isolation**: The `admin_data` endpoint automatically filters patients based on the `AssociatedPsychiatrist` column in the Google Sheet.
+- **Admin Context**: The `Index.tsx` passes the current admin's `username` to the API to ensure they only see their specific clinical roster.
+- **Guide**: Detailed multi-admin setup is in [MULTI_ADMIN_USER.md](file:///e:/Code%20projects/github%20projects/mood-sphere-report/MULTI_ADMIN_USER.md).
 
-## 8. Admin Triage & Filters
+## 8. Clinical Toolkit (CBT & Journaling)
+- **Emotional Journal**: [EmotionalJournal.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/components/EmotionalJournal.tsx). Optimized for stream-of-consciousness journaling.
+- **Thought Record (CBT)**: [ThoughtRecord.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/components/ThoughtRecord.tsx). A structured 7-step cognitive behavioral therapy tool with interactive sliders for emotional intensity.
+
+## 9. Admin Triage & Filters
 - **Diagnostic Filters**: Implemented in [AdminDashboard.tsx](file:///e:/Code%20projects/github%20projects/mood-sphere-report/src/components/AdminDashboard.tsx).
-- **High-Yield Patterns**: Logic for **Burnout Risk**, **Social Isolation**, and **Slippage** is defined in the `getUserStats` helper function.
-- **Medication Filter**: Toggles visibility of users with active `prescriptions`.
+- **Advanced Controls**:
+    - **Mood Score Filter**: Isolate patients by average emotional valence.
+    - **Activity Filter**: Filter by volume of entries (High/Low engagement).
+    - **Prescription Control**: Admins can add new medications directly through the patient "Detailed View" modal.
 
-## 9. .env & Google Sheets
+## 10. .env & Google Sheets
 - **GOOGLE_SHEET_ID**: Main database ID.
-- **New Workspace Tabs**: Ensure `MedicationPrescriptions` and `MedicationLogs` tabs exist (see [integration guide](file:///e:/Code%20projects/github%20projects/mood-sphere-report/GOOGLE_SHEETS_INTEGRATION.md)).
+- **Required Tabs**: `MoodEntries`, `JournalEntries`, `ThoughtRecords`, `MedicationPrescriptions`, `MedicationLogs`.
+- **Integration Details**: See the [Full Integration Guide](file:///e:/Code%20projects/github%20projects/mood-sphere-report/GOOGLE_SHEETS_INTEGRATION.md).

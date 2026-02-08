@@ -150,6 +150,7 @@ export const fetchPrescriptions = async (username: string): Promise<any[]> => {
     }
 };
 
+
 export const saveMedicationLog = async (log: any): Promise<boolean> => {
     try {
         const response = await fetch(`${ENDPOINT}?action=save_med_log`, {
@@ -160,6 +161,20 @@ export const saveMedicationLog = async (log: any): Promise<boolean> => {
         return response.ok;
     } catch (error) {
         console.error('Error saving medication log:', error);
+        return false;
+    }
+};
+
+export const addPrescription = async (prescription: any): Promise<boolean> => {
+    try {
+        const response = await fetch(`${ENDPOINT}?action=add_prescription`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(prescription),
+        });
+        return response.ok;
+    } catch (error) {
+        console.error('Error adding prescription:', error);
         return false;
     }
 };

@@ -403,6 +403,7 @@ const Index = () => {
                 thoughtRecords={adminData.thoughtRecords}
                 prescriptions={adminData.prescriptions} // Added
                 medLogs={adminData.medLogs} // Added
+                onRefresh={() => loadAdminData(user.username)}
               />
             </TabsContent>
           )}

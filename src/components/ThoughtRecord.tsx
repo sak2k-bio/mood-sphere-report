@@ -82,7 +82,7 @@ const ThoughtRecord: React.FC<ThoughtRecordProps> = ({ records, onSave, isSubmit
             </div>
 
             {showForm && (
-                <Card className="border-primary/20 shadow-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-md animate-in zoom-in-95 duration-300">
+                <Card className="border-primary/20 shadow-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-3xl animate-in zoom-in-95 duration-500 mb-12">
                     <CardHeader className="bg-primary/5 border-b border-primary/5 pb-4">
                         <CardTitle className="text-lg">Structured CBT Entry</CardTitle>
                         <CardDescription className="text-xs uppercase font-black tracking-widest text-primary/60">Complete when your mood is worsening</CardDescription>

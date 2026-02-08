@@ -5,12 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import {
     Users, Calendar, Activity, BookOpen, BrainCircuit, History,
     TrendingUp, ChevronRight, X, Clock, Filter, Pill, Search,
-    ArrowDownAZ, ArrowUpAZ, AlertTriangle, UserMinus, ShieldAlert
+    ArrowDownAZ, ArrowUpAZ, AlertTriangle, UserMinus, ShieldAlert,
+    Plus, Loader2
 } from 'lucide-react';
 import { MoodEntry, JournalEntry, ThoughtRecord, MedicationPrescription, MedicationLog } from '../types';
 import { moodQuestions } from './MoodQuestionnaire';
 import { format, isWithinInterval, subDays, startOfWeek, startOfMonth } from 'date-fns';
 import MoodGraph from './MoodGraph';
+import { addPrescription } from '../lib/googleSheets';
+import { toast } from "@/hooks/use-toast";
 import {
     Dialog,
     DialogContent,
@@ -42,6 +45,7 @@ interface AdminDashboardProps {
     thoughtRecords?: ThoughtRecord[];
     prescriptions?: MedicationPrescription[];
     medLogs?: MedicationLog[];
+    onRefresh?: () => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -50,7 +54,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     journalEntries = [],
     thoughtRecords = [],
     prescriptions = [],
-    medLogs = []
+    medLogs = [],
+    onRefresh
 }) => {
     // --- STATE ---
     const [searchQuery, setSearchQuery] = useState("");
@@ -221,7 +226,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     // --- MODAL COMPONENT ---
     const UserDetailModal = ({ user }: { user: any }) => {
         const stats = user.stats;
+        const [isAddingMed, setIsAddingMed] = useState(false);
+        const [newMedName, setNewMedName] = useState("");
+        const [newMedDosage, setNewMedDosage] = useState("");
+        const [isSubmitting, setIsSubmitting] = useState(false);
+
         if (!stats) return null;
+
+        const handleAddPrescription = async () => {
+            if (!newMedName || !newMedDosage) {
+                toast({ title: "Missing details", description: "Please enter medication name and dosage.", variant: "destructive" });
+                return;
+            }
+
+            setIsSubmitting(true);
+            const success = await addPrescription({
+                username: user.username,
+                medicationName: newMedName,
+                dosage: newMedDosage,
+                status: 'Active'
+            });
+
+            if (success) {
+                toast({ title: "Prescription Added", description: `Assigned ${newMedName} to ${user.fullName}.` });
+                setNewMedName("");
+                setNewMedDosage("");
+                setIsAddingMed(false);
+                if (onRefresh) onRefresh();
+            } else {
+                toast({ title: "Error", description: "Failed to add prescription.", variant: "destructive" });
+            }
+            setIsSubmitting(false);
+        };
 
         return (
             <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-3xl border-primary/20 shadow-2xl rounded-[2rem] sm:rounded-none">
@@ -229,7 +265,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="flex justify-between items-center relative z-10">
                         <div className="space-y-1">
                             <DialogTitle className="text-xl md:text-3xl font-black text-primary tracking-tighter leading-none">{user.fullName}</DialogTitle>
-                            <DialogDescription className="font-mono text-[9px] md:text-[11px] uppercase tracking-[0.2em] font-black opacity-40">
+                            <DialogDescription className="font-mono text-[9px] md:text-[11px] uppercase tracking-[0.2em] font-black opacity-40 dark:opacity-70">
                                 Electronic Health Record • @{user.username}
                             </DialogDescription>
                         </div>
@@ -251,20 +287,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {/* 1. Clinical Overview */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="p-4 rounded-2xl bg-primary/5 border border-primary/5 text-center">
-                                <p className="text-[10px] font-black uppercase text-muted-foreground/60 mb-1">Avg Mood</p>
+                                <p className="text-[10px] font-black uppercase text-muted-foreground/60 dark:text-foreground/70 mb-1">Avg Mood</p>
                                 <p className="text-3xl font-black text-primary">{stats.avgScore || "N/A"}</p>
                             </div>
                             <div className="p-4 rounded-2xl bg-primary/5 border border-primary/5 text-center">
-                                <p className="text-[10px] font-black uppercase text-muted-foreground/60 mb-1">Engagements</p>
+                                <p className="text-[10px] font-black uppercase text-muted-foreground/60 dark:text-foreground/70 mb-1">Engagements</p>
                                 <p className="text-3xl font-black text-primary">{stats.totalActivity}</p>
                             </div>
                             <div className="p-4 rounded-2xl bg-green-500/5 border border-green-500/10 text-center">
-                                <p className="text-[10px] font-black uppercase text-green-600/60 mb-1">CBT Active</p>
-                                <p className="text-3xl font-black text-green-600">{stats.thoughtCount}</p>
+                                <p className="text-[10px] font-black uppercase text-green-600/60 dark:text-green-400/80 mb-1">CBT Active</p>
+                                <p className="text-3xl font-black text-green-600 dark:text-green-400">{stats.thoughtCount}</p>
                             </div>
                             <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-center">
-                                <p className="text-[10px] font-black uppercase text-amber-600/60 mb-1">Meds Taken</p>
-                                <p className="text-3xl font-black text-amber-600">{stats.medCount}</p>
+                                <p className="text-[10px] font-black uppercase text-amber-600/60 dark:text-amber-400/80 mb-1">Meds Taken</p>
+                                <p className="text-3xl font-black text-amber-600 dark:text-amber-400">{stats.medCount}</p>
                             </div>
                         </div>
 
@@ -285,6 +321,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <h4 className="text-sm font-black uppercase tracking-widest text-amber-600 flex items-center gap-2">
                                     <Pill className="h-4 w-4" /> Prescriptions & Adherence
                                 </h4>
+
+                                {isAddingMed ? (
+                                    <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10 space-y-4 animate-in slide-in-from-top-2">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Medication Name</Label>
+                                            <Input value={newMedName} onChange={(e) => setNewMedName(e.target.value)} placeholder="e.g. Sertraline" className="rounded-xl border-primary/20" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Dosage & Schedule</Label>
+                                            <Input value={newMedDosage} onChange={(e) => setNewMedDosage(e.target.value)} placeholder="e.g. 50mg Once Daily" className="rounded-xl border-primary/20" />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button onClick={handleAddPrescription} disabled={isSubmitting} className="flex-1 rounded-xl font-black uppercase tracking-tighter h-11">
+                                                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Assignment"}
+                                            </Button>
+                                            <Button variant="outline" onClick={() => setIsAddingMed(false)} className="rounded-xl font-black uppercase tracking-tighter h-11">Cancel</Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <Button onClick={() => setIsAddingMed(true)} variant="outline" className="w-full border-dashed border-amber-500/30 hover:border-amber-500/60 hover:bg-amber-500/5 text-amber-600 rounded-2xl py-8 flex flex-col gap-1">
+                                        <Plus className="h-5 w-5" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Add New Prescription</span>
+                                    </Button>
+                                )}
+
                                 <div className="space-y-4">
                                     {stats.allPrescriptions.length > 0 ? (
                                         <div className="space-y-4">
@@ -299,13 +360,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 {stats.allMedLogs.map((l, i) => (
                                                     <div key={i} className="flex justify-between items-center p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-500/5 text-xs">
                                                         <span className="font-bold">{l.medicationName}</span>
-                                                        <span className="text-muted-foreground">{format(new Date(l.timestamp), 'MMM d, h:mm a')}</span>
+                                                        <span className="text-muted-foreground dark:text-foreground/60">{format(new Date(l.timestamp), 'MMM d, h:mm a')}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="p-10 border-2 border-dashed border-primary/5 rounded-3xl text-center opacity-30">
+                                        <div className="p-10 border-2 border-dashed border-primary/5 rounded-3xl text-center opacity-30 dark:opacity-60">
                                             <Pill className="h-8 w-8 mx-auto mb-2" />
                                             <p className="text-[10px] font-black uppercase">No Active Medications</p>
                                         </div>
@@ -323,7 +384,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         <div key={i} className="p-5 rounded-3xl bg-destructive/[0.02] border border-destructive/5 space-y-4">
                                             <div className="flex justify-between">
                                                 <Badge className="bg-destructive/10 text-destructive border-none text-[9px] uppercase font-black">{t.emotion}</Badge>
-                                                <span className="text-[10px] text-muted-foreground opacity-50">{format(new Date(t.date), 'MMM d')}</span>
+                                                <span className="text-[10px] text-muted-foreground dark:text-foreground/60 opacity-50 dark:opacity-80">{format(new Date(t.date), 'MMM d')}</span>
                                             </div>
                                             <p className="text-xs font-bold leading-tight line-clamp-2">"{t.situation}"</p>
                                             <div className="flex items-center gap-2">
@@ -350,7 +411,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {stats.allJournals.map((j, i) => (
                                     <div key={i} className="p-6 rounded-3xl bg-primary/[0.03] border border-primary/5 space-y-3">
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-40">
+                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest opacity-40 dark:opacity-70">
                                             <span>Entry #{j.dayNumber || stats.allJournals.length - i}</span>
                                             <span>{format(new Date(j.date), 'MMM d, p')}</span>
                                         </div>
@@ -371,7 +432,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl rounded-3xl p-6 border border-primary/10 shadow-xl space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="flex-1 w-full relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50 dark:opacity-80" />
                         <Input
                             placeholder="Search patients by name or ID..."
                             className="pl-12 py-6 rounded-2xl bg-white/50 dark:bg-gray-900/50 border-none shadow-inner"
@@ -469,7 +530,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <AlertTriangle className="h-3 w-3 mr-2" /> Therapy Gap
                     </Badge>
                     {clinicalFilter !== "none" && (
-                        <Button variant="ghost" size="sm" onClick={() => setClinicalFilter("none")} className="h-8 text-[9px] font-black uppercase text-muted-foreground">Clear Patterns</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setClinicalFilter("none")} className="h-8 text-[9px] font-black uppercase text-muted-foreground dark:text-foreground/60">Clear Patterns</Button>
                     )}
                 </div>
             </div>
@@ -493,7 +554,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             <div className="space-y-1">
                                                 <CardTitle className="text-xl font-bold group-hover:text-primary transition-colors tracking-tight">{user.fullName}</CardTitle>
                                                 <div className="flex items-center gap-2">
-                                                    <CardDescription className="text-[10px] font-mono uppercase tracking-tighter opacity-50">@{user.username}</CardDescription>
+                                                    <CardDescription className="text-[10px] font-mono uppercase tracking-tighter opacity-50 dark:opacity-80">@{user.username}</CardDescription>
                                                     {stats?.onMedication && <Pill className="h-3.5 w-3.5 text-amber-500 animate-pulse" />}
                                                 </div>
                                             </div>
@@ -508,15 +569,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 {/* Diagnostic Stats */}
                                                 <div className="grid grid-cols-3 gap-3">
                                                     <div className="bg-primary/5 rounded-2xl p-3 text-center border border-primary/5 group-hover:bg-primary/10 transition-colors">
-                                                        <p className="text-[9px] uppercase text-muted-foreground font-black mb-1 opacity-50">Avg</p>
+                                                        <p className="text-[9px] uppercase text-muted-foreground font-black mb-1 opacity-50 dark:opacity-80">Avg</p>
                                                         <p className={`text-xl font-black leading-none ${(stats.avgScore || 0) < 5 ? 'text-destructive' : 'text-primary'}`}>{stats.avgScore || "N/A"}</p>
                                                     </div>
                                                     <div className="bg-primary/5 rounded-2xl p-3 text-center border border-primary/5">
-                                                        <p className="text-[9px] uppercase text-muted-foreground font-black mb-1 opacity-50">Moods</p>
+                                                        <p className="text-[9px] uppercase text-muted-foreground font-black mb-1 opacity-50 dark:opacity-80">Moods</p>
                                                         <p className="text-xl font-black text-primary leading-none">{stats.daysRecorded}</p>
                                                     </div>
                                                     <div className="bg-primary/5 rounded-2xl p-3 text-center border border-primary/5">
-                                                        <p className="text-[9px] uppercase text-muted-foreground font-black mb-1 opacity-50">Total</p>
+                                                        <p className="text-[9px] uppercase text-muted-foreground font-black mb-1 opacity-50 dark:opacity-80">Total</p>
                                                         <p className="text-xl font-black text-primary leading-none">{stats.totalActivity}</p>
                                                     </div>
                                                 </div>
@@ -525,7 +586,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 {stats.allMoods.length > 0 && (
                                                     <div className="space-y-2">
                                                         <div className="flex items-baseline justify-between">
-                                                            <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-widest">Trend</p>
+                                                            <p className="text-[9px] font-black text-muted-foreground/60 dark:text-foreground/70 uppercase tracking-widest">Trend</p>
                                                             {stats.patterns.slipping && <Badge variant="outline" className="text-[7px] text-destructive border-destructive/20 bg-destructive/5 font-black uppercase tracking-tighter h-4">Critical Slippage</Badge>}
                                                         </div>
                                                         <MoodGraph data={stats.allMoods} compact />
@@ -535,11 +596,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 {/* Detailed Meta Footer */}
                                                 <div className="pt-4 border-t border-primary/5 flex justify-between items-end">
                                                     <div className="space-y-1">
-                                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-muted-foreground/40">
+                                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-muted-foreground/40 dark:text-foreground/60">
                                                             <Clock className="h-3 w-3" />
                                                             <span>{stats.lastMoodEntry ? format(new Date(stats.lastMoodEntry.Date), 'MMM d, h:mm a') : 'No Records'}</span>
                                                         </div>
-                                                        <p className="text-[10px] font-black text-primary/60 uppercase tracking-wider">Next: {stats.nextDue}</p>
+                                                        <p className="text-[10px] font-black text-primary/60 dark:text-primary uppercase tracking-wider">Next: {stats.nextDue}</p>
                                                     </div>
                                                     <div className="flex flex-col items-end gap-1">
                                                         <div className="flex gap-1">
@@ -554,7 +615,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                                 </div>
                                             </>
                                         ) : (
-                                            <div className="py-24 text-center space-y-4 opacity-20">
+                                            <div className="py-24 text-center space-y-4 opacity-20 dark:opacity-40">
                                                 <Calendar className="h-12 w-12 mx-auto text-muted-foreground" />
                                                 <p className="text-[10px] font-black uppercase tracking-[0.3em]">Awaiting Clinical Record</p>
                                             </div>
