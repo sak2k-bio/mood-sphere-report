@@ -62,7 +62,14 @@ Records every time a user marks a medication as taken.
 | :--- | :--- | :--- |
 | john_doe | Fluoxetine | 2024-02-08T09:00:00Z |
 
-## 🚨 Critical Security Warning: Service Accounts
+## 2. Clinical Data Robustness
+
+The application is designed to be **resilient to manual edits** in the Google Sheet:
+- **Case Sensitivity**: The API handles both `MedicationName` (Legacy) and `medicationName` (New).
+- **Empty Rows**: The backend aggregator automatically filters out empty rows and provides default timestamps (e.g., current server time) if a `Timestamp` is missing.
+- **Malformed Dates**: The frontend components use a `safeFormat` utility. If a manually entered date in the Sheet is invalid, the UI will display **"N/A"** instead of crashing.
+
+## 3. 🚨 Critical Security Warning: Service Accounts
 
 ### Why Vercel ENV variables aren't enough (The "Vite Trap")
 Great question! Here is how the "leak" happens:

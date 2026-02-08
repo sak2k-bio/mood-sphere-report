@@ -25,6 +25,7 @@ Styles are managed in [tailwind.config.ts](file:///e:/Code%20projects/github%20p
 Backend logic in [api/mood-sync.ts](file:///e:/Code%20projects/github%20projects/mood-sphere-report/api/mood-sync.ts):
 - `action=fetch_prescriptions`: [FIXED] Fetches active prescriptions. Uses `medicationName`, `dosage`, `schedule`.
 - `action=add_prescription`: Admin tool to assign new medication records.
+- `action=delete_prescription`: [NEW] Admin tool to remove active prescriptions.
 - `action=save_med_log`: Records daily intake with timestamping.
 - `action=fetch_med_logs`: [NEW] Pulls a user's chronological intake history.
 - `action=admin_data`: Aggregates all clinical metrics. Enforces patient isolation by **AssociatedPsychiatrist**.

@@ -247,6 +247,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ success: true });
         }
 
+        if (req.method === 'POST' && action === 'delete_prescription' && prescriptionSheet) {
+            const { username, medicationName } = req.body;
+            const rows = await prescriptionSheet.getRows();
+            const rowToDelete = rows.find(r =>
+                r.get('Username') === username &&
+                (r.get('medicationName') === medicationName || r.get('MedicationName') === medicationName)
+            );
+
+            if (rowToDelete) {
+                await rowToDelete.delete();
+                return res.status(200).json({ success: true });
+            }
+            return res.status(404).json({ error: 'Prescription not found' });
+        }
+
         if (req.method === 'GET' && action === 'fetch_med_logs' && medLogSheet) {
             const rows = await medLogSheet.getRows();
             const entries = rows

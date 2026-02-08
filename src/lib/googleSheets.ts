@@ -161,6 +161,20 @@ export const fetchMedLogs = async (username: string): Promise<any[]> => {
     }
 };
 
+export const deletePrescription = async (username: string, medicationName: string): Promise<boolean> => {
+    try {
+        const response = await fetch(`${ENDPOINT}?action=delete_prescription`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, medicationName }),
+        });
+        return response.ok;
+    } catch (error) {
+        console.error('Error deleting prescription:', error);
+        return false;
+    }
+};
+
 export const saveMedicationLog = async (log: any): Promise<boolean> => {
     try {
         const response = await fetch(`${ENDPOINT}?action=save_med_log`, {

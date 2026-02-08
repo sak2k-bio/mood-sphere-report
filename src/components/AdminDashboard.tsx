@@ -12,7 +12,7 @@ import { MoodEntry, JournalEntry, ThoughtRecord, MedicationPrescription, Medicat
 import { moodQuestions } from './MoodQuestionnaire';
 import { format, isWithinInterval, subDays, startOfWeek, startOfMonth } from 'date-fns';
 import MoodGraph from './MoodGraph';
-import { addPrescription } from '../lib/googleSheets';
+import { addPrescription, deletePrescription } from '../lib/googleSheets';
 import { toast } from "@/hooks/use-toast";
 import {
     Dialog,
@@ -271,6 +271,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             setIsSubmitting(false);
         };
 
+        const handleDeletePrescription = async (medName: string) => {
+            if (isSubmitting) return;
+
+            if (window.confirm(`Are you sure you want to remove ${medName}?`)) {
+                setIsSubmitting(true);
+                const success = await deletePrescription(user.username, medName);
+                if (success) {
+                    toast({ title: "Prescription Removed", description: `Removed ${medName} from ${user.fullName}'s records.` });
+                    if (onRefresh) onRefresh();
+                } else {
+                    toast({ title: "Error", description: "Failed to remove prescription.", variant: "destructive" });
+                }
+                setIsSubmitting(false);
+            }
+        };
+
         return (
             <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-3xl border-primary/20 shadow-2xl rounded-[2rem] sm:rounded-none">
                 <DialogHeader className="p-5 md:p-8 bg-primary/5 border-b border-primary/10 relative">
@@ -363,8 +379,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         <div className="space-y-4">
                                             <div className="flex flex-wrap gap-2">
                                                 {stats.allPrescriptions.map((p, i) => (
-                                                    <Badge key={i} className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200">
+                                                    <Badge key={i} className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 group/badge relative pr-8">
                                                         {p.medicationName} ({p.dosage})
+                                                        <button
+                                                            onClick={() => handleDeletePrescription(p.medicationName)}
+                                                            disabled={isSubmitting}
+                                                            className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-amber-200 dark:hover:bg-amber-800 rounded-full transition-colors opacity-0 group-hover/badge:opacity-100 disabled:opacity-0"
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </button>
                                                     </Badge>
                                                 ))}
                                             </div>
