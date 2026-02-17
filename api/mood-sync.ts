@@ -31,6 +31,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const { action, username, password } = req.query;
 
+        // --- HELPERS ---
+        const safeNum = (val: any) => {
+            if (val === undefined || val === null || val === '') return 0;
+            const n = Number(val);
+            return isNaN(n) ? 0 : n;
+        };
+
+        const safeInt = (val: any) => {
+            if (val === undefined || val === null || val === '') return null;
+            const n = parseInt(val, 10);
+            return isNaN(n) ? null : n;
+        };
+
         // --- HANDLE LOGIN ---
         if (req.method === 'GET' && action === 'login') {
             if (!userSheet) return res.status(500).json({ error: 'Authentication sheet "Users" not found' });
@@ -67,7 +80,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ]);
 
             // Determine authorized patients for this admin
-            // A Super Admin (james_h) might see everything, others see only their assigned patients
             const isSuperAdmin = username === 'james_h';
             const authorizedPatients = allUsersRows.filter(u => {
                 const assignedDoc = u.get('AssociatedPsychiatrist');
@@ -82,12 +94,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .map(row => ({
                     Username: row.get('Username'),
                     Date: row.get('Date'),
-                    "Overall Score": row.get('Overall Score'),
-                    "Q1: Overall Mood": row.get('Q1: Overall Mood'),
-                    "Q2: Stress": row.get('Q2: Stress'),
-                    "Q3: Social": row.get('Q3: Social'),
-                    "Q4: Energy": row.get('Q4: Energy'),
-                    "Q5: Satisfaction": row.get('Q5: Satisfaction'),
+                    "Overall Score": safeNum(row.get('Overall Score')),
+                    "Q1: Overall Mood": safeNum(row.get('Q1: Overall Mood')),
+                    "Q2: Stress": safeNum(row.get('Q2: Stress')),
+                    "Q3: Social": safeNum(row.get('Q3: Social')),
+                    "Q4: Energy": safeNum(row.get('Q4: Energy')),
+                    "Q5: Satisfaction": safeNum(row.get('Q5: Satisfaction')),
                     Triggers: row.get('Triggers'),
                 }));
 
@@ -104,7 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     username: r.get('Username'),
                     date: r.get('Date') || r.get('date') || new Date().toISOString(),
                     content: r.get('Content') || r.get('content') || '',
-                    dayNumber: r.get('DayNumber') || r.get('dayNumber')
+                    dayNumber: safeInt(r.get('DayNumber') || r.get('dayNumber'))
                 }));
 
             const thoughtData = thoughts
@@ -112,16 +124,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .map(r => ({
                     username: r.get('Username'),
                     date: r.get('Date') || r.get('date') || new Date().toISOString(),
-                    dayNumber: r.get('DayNumber') || r.get('dayNumber'),
+                    dayNumber: safeInt(r.get('DayNumber') || r.get('dayNumber')),
                     situation: r.get('Situation') || r.get('situation') || '',
                     emotion: r.get('Emotion') || r.get('emotion') || '',
-                    intensityScore: r.get('IntensityScore') || r.get('intensityScore') || 0,
+                    intensityScore: safeNum(r.get('IntensityScore') || r.get('intensityScore')),
                     automaticThought: r.get('AutomaticThought') || r.get('automaticThought') || '',
                     evidenceFor: r.get('EvidenceFor') || r.get('evidenceFor') || '',
                     evidenceAgainst: r.get('EvidenceAgainst') || r.get('evidenceAgainst') || '',
                     alternativeThought: r.get('AlternativeThought') || r.get('alternativeThought') || '',
                     behaviorResponse: r.get('BehaviorResponse') || r.get('behaviorResponse') || '',
-                    emotionAfterIntensity: r.get('EmotionAfterIntensity') || r.get('emotionAfterIntensity') || 0
+                    emotionAfterIntensity: safeNum(r.get('EmotionAfterIntensity') || r.get('emotionAfterIntensity'))
                 }));
 
             const prescriptionData = prescriptions
@@ -161,15 +173,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .filter(row => row.get('Username') === username)
                 .map(row => ({
                     Username: row.get('Username'),
-                    username: row.get('Username'), // Alias
+                    username: row.get('Username'),
                     Date: row.get('Date'),
-                    date: row.get('Date'), // Alias
-                    "Overall Score": row.get('Overall Score'),
-                    "Q1: Overall Mood": row.get('Q1: Overall Mood'),
-                    "Q2: Stress": row.get('Q2: Stress'),
-                    "Q3: Social": row.get('Q3: Social'),
-                    "Q4: Energy": row.get('Q4: Energy'),
-                    "Q5: Satisfaction": row.get('Q5: Satisfaction'),
+                    date: row.get('Date'),
+                    "Overall Score": safeNum(row.get('Overall Score')),
+                    "Q1: Overall Mood": safeNum(row.get('Q1: Overall Mood')),
+                    "Q2: Stress": safeNum(row.get('Q2: Stress')),
+                    "Q3: Social": safeNum(row.get('Q3: Social')),
+                    "Q4: Energy": safeNum(row.get('Q4: Energy')),
+                    "Q5: Satisfaction": safeNum(row.get('Q5: Satisfaction')),
                     Triggers: row.get('Triggers'),
                 }));
             return res.status(200).json(userEntries);
@@ -182,13 +194,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .filter(r => r.get('Username') === username)
                 .map(r => ({
                     username: r.get('Username'),
-                    Username: r.get('Username'), // PascalCase alias for mobile
+                    Username: r.get('Username'),
                     date: r.get('Date'),
-                    Date: r.get('Date'), // PascalCase alias for mobile
+                    Date: r.get('Date'),
                     content: r.get('Content'),
-                    Content: r.get('Content'), // PascalCase alias for mobile
-                    dayNumber: r.get('DayNumber'),
-                    DayNumber: r.get('DayNumber') // PascalCase alias for mobile
+                    Content: r.get('Content'),
+                    dayNumber: safeInt(r.get('DayNumber')),
+                    DayNumber: safeInt(r.get('DayNumber'))
                 }));
             return res.status(200).json(entries);
         }
@@ -214,14 +226,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     Username: r.get('Username'),
                     date: r.get('Date'),
                     Date: r.get('Date'),
-                    dayNumber: r.get('DayNumber'),
-                    DayNumber: r.get('DayNumber'),
+                    dayNumber: safeInt(r.get('DayNumber')),
+                    DayNumber: safeInt(r.get('DayNumber')),
                     situation: r.get('Situation'),
                     Situation: r.get('Situation'),
                     emotion: r.get('Emotion'),
                     Emotion: r.get('Emotion'),
-                    intensityScore: r.get('IntensityScore'),
-                    IntensityScore: r.get('IntensityScore'),
+                    intensityScore: safeNum(r.get('IntensityScore')),
+                    IntensityScore: safeNum(r.get('IntensityScore')),
                     automaticThought: r.get('AutomaticThought'),
                     AutomaticThought: r.get('AutomaticThought'),
                     evidenceFor: r.get('EvidenceFor'),
@@ -232,8 +244,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     AlternativeThought: r.get('AlternativeThought'),
                     behaviorResponse: r.get('BehaviorResponse'),
                     BehaviorResponse: r.get('BehaviorResponse'),
-                    emotionAfterIntensity: r.get('EmotionAfterIntensity'),
-                    EmotionAfterIntensity: r.get('EmotionAfterIntensity')
+                    emotionAfterIntensity: safeNum(r.get('EmotionAfterIntensity')),
+                    EmotionAfterIntensity: safeNum(r.get('EmotionAfterIntensity'))
                 }));
             return res.status(200).json(entries);
         }

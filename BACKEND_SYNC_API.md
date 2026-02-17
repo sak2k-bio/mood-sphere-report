@@ -76,3 +76,7 @@ The backend is designed to be **convention-agnostic**. It will accept either `ca
 1. **Plural Actions**: Always prefer plural names (e.g., `fetch_journals`) for new mobile calls.
 2. **Missing Sheets**: If a specific data sheet (like `MedicationLogs`) is missing, the API returns `200 OK` with an empty array `[]` rather than an error.
 3. **Username Isolation**: All `GET` and `POST` requests MUST include a username to maintain HIPAA-compliant data isolation.
+4. **Numeric Type Safety**:
+    - **CRITICAL**: Google Sheets often stores values as Strings. Flutter's Dart models (using `Retrofit`/`JsonSerializable`) will crash with `type 'String' is not a subtype of type 'num'` if the API returns a string for a numeric field.
+    - **Fix**: The backend MUST use `safeNum()` or `safeInt()` to explicitly cast scores, intensities, and day numbers to `number` before sending JSON.
+    - **Mandatory Numeric Fields**: `Overall Score`, `Q1-Q5`, `DayNumber`, `IntensityScore`, `EmotionAfterIntensity`.
