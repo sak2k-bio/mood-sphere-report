@@ -87,40 +87,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // Determine authorized patients for this admin
             const isSuperAdmin = username === 'james_h';
             const authorizedPatients = allUsersRows.filter(u => {
-                const assignedDoc = u.get('AssociatedPsychiatrist');
+                const assignedDoc = u.get('AssociatedPsychiatrist') || u.get('associatedPsychiatrist');
+                const uName = u.get('Username') || u.get('username');
                 return isSuperAdmin || assignedDoc === username;
             });
 
-            const authorizedUsernames = new Set(authorizedPatients.map(u => u.get('Username')));
+            const authorizedUsernames = new Set(authorizedPatients.map(u => u.get('Username') || u.get('username')));
 
             // Filter all data packets
             const filteredEntries = allRows
-                .filter(row => authorizedUsernames.has(row.get('Username')))
+                .filter(row => authorizedUsernames.has(row.get('Username') || row.get('username')))
                 .map(row => ({
-                    Username: safeStr(row.get('Username')),
-                    Date: safeStr(row.get('Date')),
-                    "Overall Score": safeNum(row.get('Overall Score')),
-                    "Q1: Overall Mood": safeNum(row.get('Q1: Overall Mood')),
-                    "Q2: Stress": safeNum(row.get('Q2: Stress')),
-                    "Q3: Social": safeNum(row.get('Q3: Social')),
-                    "Q4: Energy": safeNum(row.get('Q4: Energy')),
-                    "Q5: Satisfaction": safeNum(row.get('Q5: Satisfaction')),
-                    Triggers: safeStr(row.get('Triggers')),
+                    Username: safeStr(row.get('Username') || row.get('username')),
+                    username: safeStr(row.get('Username') || row.get('username')),
+                    Date: safeStr(row.get('Date') || row.get('date')),
+                    date: safeStr(row.get('Date') || row.get('date')),
+                    "Overall Score": safeNum(row.get('Overall Score') || row.get('overallScore') || row.get('Score')),
+                    "Q1: Overall Mood": safeNum(row.get('Q1: Overall Mood') || row.get('q1OverallMood')),
+                    "Q2: Stress": safeNum(row.get('Q2: Stress') || row.get('q2Stress')),
+                    "Q3: Social": safeNum(row.get('Q3: Social') || row.get('q3Social')),
+                    "Q4: Energy": safeNum(row.get('Q4: Energy') || row.get('q4Energy')),
+                    "Q5: Satisfaction": safeNum(row.get('Q5: Satisfaction') || row.get('q5Satisfaction')),
+                    Triggers: safeStr(row.get('Triggers') || row.get('triggers')),
                 }));
 
             const journalData = journals
-                .filter(r => authorizedUsernames.has(r.get('Username')))
+                .filter(r => authorizedUsernames.has(r.get('Username') || r.get('username')))
                 .map(r => ({
-                    username: safeStr(r.get('Username')),
+                    username: safeStr(r.get('Username') || r.get('username')),
                     date: safeStr(r.get('Date') || r.get('date') || new Date().toISOString()),
                     content: safeStr(r.get('Content') || r.get('content') || ''),
                     dayNumber: safeInt(r.get('DayNumber') || r.get('dayNumber'))
                 }));
-
             const thoughtData = thoughts
-                .filter(r => authorizedUsernames.has(r.get('Username')))
+                .filter(r => authorizedUsernames.has(r.get('Username') || r.get('username')))
                 .map(r => ({
-                    username: safeStr(r.get('Username')),
+                    username: safeStr(r.get('Username') || r.get('username')),
                     date: safeStr(r.get('Date') || r.get('date') || new Date().toISOString()),
                     dayNumber: safeInt(r.get('DayNumber') || r.get('dayNumber')),
                     situation: safeStr(r.get('Situation') || r.get('situation') || ''),
@@ -134,21 +136,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     emotionAfterIntensity: safeNum(r.get('EmotionAfterIntensity') || r.get('emotionAfterIntensity'))
                 }));
 
+            const prescriptionData = (prescriptions || [])
+                .filter(p => authorizedUsernames.has(p.get('Username') || p.get('username')))
+                .map(p => ({
+                    username: safeStr(p.get('Username') || p.get('username')),
+                    medicationName: safeStr(p.get('medicationName') || p.get('MedicationName') || p.get('Medication Name') || p.get('Name')),
+                    dosage: safeStr(p.get('dosage') || p.get('Dosage') || p.get('Dosage Amount')),
+                    status: safeStr(p.get('status') || p.get('Status') || 'Active'),
+                    schedule: safeStr(p.get('schedule') || p.get('Schedule') || p.get('Frequency'))
+                }));
+
             const medLogData = logs
-                .filter(l => authorizedUsernames.has(l.get('Username')))
+                .filter(l => authorizedUsernames.has(l.get('Username') || l.get('username')))
                 .map(l => ({
-                    username: safeStr(l.get('Username')),
-                    medicationName: safeStr(l.get('medicationName') || l.get('MedicationName') || ''),
+                    username: safeStr(l.get('Username') || l.get('username')),
+                    medicationName: safeStr(l.get('medicationName') || l.get('MedicationName') || l.get('Medication Name')),
                     timestamp: safeStr(l.get('Timestamp') || l.get('timestamp') || new Date().toISOString())
                 }));
 
             const patients = authorizedPatients.map(u => {
-                const uName = safeStr(u.get('Username'));
+                const uName = safeStr(u.get('Username') || u.get('username'));
                 const userEntries = filteredEntries.filter(e => e.Username === uName);
                 const userJournals = journalData.filter(j => j.username === uName);
                 const userThoughts = thoughtData.filter(t => t.username === uName);
                 const userLogs = medLogData.filter(l => l.username === uName);
-                const userMeds = prescriptions.filter(p => safeStr(p.get('Username')) === uName);
+                const userMeds = prescriptions.filter(p => safeStr(p.get('Username') || p.get('username')) === uName);
 
                 // Sort entries by date descending to find latest mood score
                 const sortedEntries = [...userEntries].sort((a, b) =>
@@ -173,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                 return {
                     username: uName,
-                    fullName: safeStr(u.get('Full Name')),
+                    fullName: safeStr(u.get('Full Name') || u.get('fullName') || u.get('Name')),
                     latestMoodScore: sortedEntries.length > 0 ? sortedEntries[0]["Overall Score"] : 0,
                     averageMoodScore: avgMood,
                     lastActiveDate: lastActive,
@@ -190,7 +202,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             return res.status(200).json({
                 patients: patients,
-                clinicianName: clinicianName
+                clinicianName: clinicianName,
+                entries: filteredEntries,
+                users: authorizedPatients.map(u => ({
+                    username: safeStr(u.get('Username') || u.get('username')),
+                    fullName: safeStr(u.get('Full Name') || u.get('fullName') || u.get('Name')),
+                    role: safeStr(u.get('Role') || 'user')
+                })),
+                journalEntries: journalData,
+                thoughtRecords: thoughtData,
+                prescriptions: prescriptionData,
+                medLogs: medLogData
             });
         }
 
