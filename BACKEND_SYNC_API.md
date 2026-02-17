@@ -77,6 +77,8 @@ The backend is designed to be **convention-agnostic**. It will accept either `ca
 2. **Missing Sheets**: If a specific data sheet (like `MedicationLogs`) is missing, the API returns `200 OK` with an empty array `[]` rather than an error.
 3. **Username Isolation**: All `GET` and `POST` requests MUST include a username to maintain HIPAA-compliant data isolation.
 4. **Numeric Type Safety**:
-    - **CRITICAL**: Google Sheets often stores values as Strings. Flutter's Dart models (using `Retrofit`/`JsonSerializable`) will crash with `type 'String' is not a subtype of type 'num'` if the API returns a string for a numeric field.
-    - **Fix**: The backend MUST use `safeNum()` or `safeInt()` to explicitly cast scores, intensities, and day numbers to `number` before sending JSON.
-    - **Mandatory Numeric Fields**: `Overall Score`, `Q1-Q5`, `DayNumber`, `IntensityScore`, `EmotionAfterIntensity`.
+    - **CRITICAL**: Google Sheets often stores values as Strings. Flutter's Dart models will crash with `type 'String' is not a subtype of type 'num'` if the API returns a string for a numeric field.
+    - **Fix**: The backend MUST use `safeNum()` or `safeInt()` to explicitly cast data.
+5. **String Safety**: 
+    - **CRITICAL**: Dart's non-nullable strings will crash with `type 'Null' is not a subtype of type 'String'` if a field is null.
+    - **Fix**: Use `safeStr()` in the backend to ensure empty cells return `""` instead of `null`.
