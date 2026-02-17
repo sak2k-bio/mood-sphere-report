@@ -49,7 +49,31 @@ The following actions support both singular and plural names to maintain cross-p
 
 ---
 
-## 3. Data Ingestion (Pushing Logs)
+## 4. Clinical Admin Data
+**Endpoint:** `GET /api/mood-sync?action=admin_data&username=[clinician_username]`
+
+This endpoint returns a consolidated view of all patients assigned to a specific clinician.
+
+**Response Structure:**
+```json
+{
+  "clinicianName": "Dr. Amara Clark",
+  "patients": [
+    {
+      "username": "ryan",
+      "fullName": "Ryan Smith",
+      "latestMoodScore": 8.5,
+      "journalCount": 12,
+      "thoughtRecordCount": 5,
+      "medLogCount": 30
+    }
+  ]
+}
+```
+
+---
+
+## 5. Data Ingestion (Pushing Logs)
 
 **Endpoint:** `POST /api/mood-sync?action=[action]`
 
@@ -67,7 +91,7 @@ The backend is designed to be **convention-agnostic**. It will accept either `ca
 
 ---
 
-## 4. Key Compatibility Rules
+## 6. Key Compatibility Rules
 
 > [!IMPORTANT]
 > **Why Dual-Casing?** 

@@ -108,13 +108,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     Triggers: safeStr(row.get('Triggers')),
                 }));
 
-            const userData = authorizedPatients.map(u => ({
-                username: safeStr(u.get('Username')),
-                fullName: safeStr(u.get('Full Name')),
-                role: safeStr(u.get('Role') || 'user'),
-                associatedPsychiatrist: safeStr(u.get('AssociatedPsychiatrist'))
-            }));
-
             const journalData = journals
                 .filter(r => authorizedUsernames.has(r.get('Username')))
                 .map(r => ({
@@ -141,16 +134,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     emotionAfterIntensity: safeNum(r.get('EmotionAfterIntensity') || r.get('emotionAfterIntensity'))
                 }));
 
-            const prescriptionData = prescriptions
-                .filter(p => authorizedUsernames.has(p.get('Username')))
-                .map(p => ({
-                    username: safeStr(p.get('Username')),
-                    medicationName: safeStr(p.get('medicationName') || p.get('MedicationName')),
-                    dosage: safeStr(p.get('dosage') || p.get('Dosage')),
-                    status: safeStr(p.get('status') || p.get('Status') || 'Active'),
-                    schedule: safeStr(p.get('schedule') || p.get('Schedule'))
-                }));
-
             const medLogData = logs
                 .filter(l => authorizedUsernames.has(l.get('Username')))
                 .map(l => ({
@@ -159,13 +142,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     timestamp: safeStr(l.get('Timestamp') || l.get('timestamp') || new Date().toISOString())
                 }));
 
+            const patients = authorizedPatients.map(u => {
+                const uName = safeStr(u.get('Username'));
+                const userEntries = filteredEntries.filter(e => e.Username === uName);
+                const userJournals = journalData.filter(j => j.username === uName);
+                const userThoughts = thoughtData.filter(t => t.username === uName);
+                const userLogs = medLogData.filter(l => l.username === uName);
+
+                // Sort entries by date descending to find latest mood score
+                const sortedEntries = [...userEntries].sort((a, b) =>
+                    new Date(b.Date).getTime() - new Date(a.Date).getTime()
+                );
+
+                return {
+                    username: uName,
+                    fullName: safeStr(u.get('Full Name')),
+                    latestMoodScore: sortedEntries.length > 0 ? sortedEntries[0]["Overall Score"] : 0,
+                    journalCount: userJournals.length,
+                    thoughtRecordCount: userThoughts.length,
+                    medLogCount: userLogs.length
+                };
+            });
+
+            // Find clinician name
+            const clinician = allUsersRows.find(u => u.get('Username') === username);
+            const clinicianName = clinician ? safeStr(clinician.get('Full Name')) : 'Clinician';
+
             return res.status(200).json({
-                entries: filteredEntries,
-                users: userData,
-                journalEntries: journalData,
-                thoughtRecords: thoughtData,
-                prescriptions: prescriptionData,
-                medLogs: medLogData
+                patients: patients,
+                clinicianName: clinicianName
             });
         }
 
