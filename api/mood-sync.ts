@@ -154,10 +154,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     new Date(b.Date).getTime() - new Date(a.Date).getTime()
                 );
 
+                const avgMood = userEntries.length > 0
+                    ? parseFloat((userEntries.reduce((sum, e) => sum + parseFloat(String(e["Overall Score"])), 0) / userEntries.length).toFixed(1))
+                    : 0;
+
+                // Find last activity date across all logs
+                const allDates = [
+                    ...userEntries.map(e => new Date(e.Date)),
+                    ...userJournals.map(j => new Date(j.date)),
+                    ...userThoughts.map(t => new Date(t.date)),
+                    ...userLogs.map(l => new Date(l.timestamp))
+                ].filter(d => !isNaN(d.getTime()));
+
+                const lastActive = allDates.length > 0
+                    ? new Date(Math.max(...allDates.map(d => d.getTime()))).toISOString()
+                    : null;
+
                 return {
                     username: uName,
                     fullName: safeStr(u.get('Full Name')),
                     latestMoodScore: sortedEntries.length > 0 ? sortedEntries[0]["Overall Score"] : 0,
+                    averageMoodScore: avgMood,
+                    lastActiveDate: lastActive,
                     journalCount: userJournals.length,
                     thoughtRecordCount: userThoughts.length,
                     medLogCount: userLogs.length
