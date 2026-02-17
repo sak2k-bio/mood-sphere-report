@@ -22,12 +22,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const doc = new GoogleSpreadsheet(sheetId, auth);
         await doc.loadInfo();
 
-        const dataSheet = doc.sheetsByTitle['MoodData'] || doc.sheetsByIndex[0];
+        const dataSheet = doc.sheetsByTitle['MoodData'] || doc.sheetsByTitle['Mood entries'] || doc.sheetsByIndex[0];
         const userSheet = doc.sheetsByTitle['Users'];
-        const journalSheet = doc.sheetsByTitle['JournalData'];
-        const thoughtRecordSheet = doc.sheetsByTitle['ThoughtRecordData'];
-        const prescriptionSheet = doc.sheetsByTitle['MedicationPrescriptions'];
-        const medLogSheet = doc.sheetsByTitle['MedicationLogs'];
+        const journalSheet = doc.sheetsByTitle['JournalData'] || doc.sheetsByTitle['JournalEntries'] || doc.sheetsByTitle['Journals'];
+        const thoughtRecordSheet = doc.sheetsByTitle['ThoughtRecordData'] || doc.sheetsByTitle['ThoughtRecords'] || doc.sheetsByTitle['CBT'];
+        const prescriptionSheet = doc.sheetsByTitle['MedicationPrescriptions'] || doc.sheetsByTitle['Prescriptions'] || doc.sheetsByTitle['Meds'];
+        const medLogSheet = doc.sheetsByTitle['MedicationLogs'] || doc.sheetsByTitle['MedLogs'] || doc.sheetsByTitle['MedicationHistory'];
 
         const { action, username, password } = req.query;
 
@@ -148,6 +148,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const userJournals = journalData.filter(j => j.username === uName);
                 const userThoughts = thoughtData.filter(t => t.username === uName);
                 const userLogs = medLogData.filter(l => l.username === uName);
+                const userMeds = prescriptions.filter(p => safeStr(p.get('Username')) === uName);
 
                 // Sort entries by date descending to find latest mood score
                 const sortedEntries = [...userEntries].sort((a, b) =>
@@ -178,7 +179,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     lastActiveDate: lastActive,
                     journalCount: userJournals.length,
                     thoughtRecordCount: userThoughts.length,
-                    medLogCount: userLogs.length
+                    medLogCount: userLogs.length,
+                    prescriptionCount: userMeds.length
                 };
             });
 
@@ -321,9 +323,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const data = req.body;
             await prescriptionSheet.addRow({
                 Username: data.Username || data.username,
-                medicationName: data.medicationName || data.MedicationName,
-                dosage: data.dosage || data.Dosage,
-                schedule: data.schedule || data.Schedule || '',
+                MedicationName: data.medicationName || data.MedicationName,
+                Dosage: data.dosage || data.Dosage,
+                Schedule: data.schedule || data.Schedule || '',
                 Status: data.status || data.Status || 'Active'
             });
             return res.status(200).json({ success: true });
@@ -365,7 +367,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const data = req.body;
             await medLogSheet.addRow({
                 Username: data.Username || data.username,
-                medicationName: data.medicationName || data.MedicationName,
+                MedicationName: data.medicationName || data.MedicationName,
                 Timestamp: data.timestamp || data.Timestamp || new Date().toISOString()
             });
             return res.status(200).json({ success: true });

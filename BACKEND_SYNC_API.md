@@ -65,7 +65,8 @@ This endpoint returns a consolidated view of all patients assigned to a specific
       "latestMoodScore": 8.5,
       "journalCount": 12,
       "thoughtRecordCount": 5,
-      "medLogCount": 30
+      "medLogCount": 30,
+      "prescriptionCount": 2
     }
   ]
 }
@@ -98,7 +99,7 @@ The backend is designed to be **convention-agnostic**. It will accept either `ca
 > The Mobile app's Dart models (Retrofit) are strictly mapped to `PascalCase` to match the Google Sheets headers. The Web app (TypeScript) expects `camelCase` for its UI state. The backend provides both to avoid breaking changes or redundant API calls.
 
 1. **Plural Actions**: Always prefer plural names (e.g., `fetch_journals`) for new mobile calls.
-2. **Missing Sheets**: If a specific data sheet (like `MedicationLogs`) is missing, the API returns `200 OK` with an empty array `[]` rather than an error.
+2. **Sheet Title Resilience**: The API includes fallbacks for common naming conventions (e.g., `MedicationPrescriptions` or `Prescriptions`, `MoodData` or `Mood entries`).
 3. **Username Isolation**: All `GET` and `POST` requests MUST include a username to maintain HIPAA-compliant data isolation.
 4. **Numeric Type Safety**:
     - **CRITICAL**: Google Sheets often stores values as Strings. Flutter's Dart models will crash with `type 'String' is not a subtype of type 'num'` if the API returns a string for a numeric field.
