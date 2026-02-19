@@ -9,10 +9,13 @@ The API acts as a gateway to Google Sheets. To maintain compatibility between th
 ---
 
 ## 1. Authentication
-**Endpoint:** `GET /api/mood-sync?action=login`
+**Endpoint:** `GET` or `POST /api/mood-sync?action=login`
 
-**Parameters:**
-| Parameter | Description |
+> [!TIP]
+> **Security Update**: Use `POST` with a JSON body for new implementations to avoid sensitive data in logs. `GET` remains supported for backward compatibility (Web Dashboard).
+
+**Parameters / Body:**
+| Key | Description |
 |-----------|-------------|
 | `username`| The user's ID |
 | `password`| The user's password |
@@ -21,7 +24,11 @@ The API acts as a gateway to Google Sheets. To maintain compatibility between th
 ```json
 {
   "success": true,
-  "user": { "username": "...", "fullName": "...", "role": "..." }
+  "user": { 
+    "username": "...", 
+    "fullName": "...", 
+    "role": "..." 
+  }
 }
 ```
 
@@ -115,7 +122,7 @@ The backend is designed to be **convention-agnostic**. It will accept either `ca
 5. **Resilient Mapping (Save & Load)**:
     - **Dual-Casing Save**: `addRow` operations now write to BOTH casing variants (e.g., `medicationName` AND `MedicationName`) simultaneously to ensure data lands in whatever column exists.
     - **Fuzzy Header Matching**: Retrieval logic checks for spaces and common synonyms (e.g., `Medication Name`, `Name`, `Frequency`, `Dosage Amount`).
-6. **Username Isolation**: All `GET` and `POST` requests MUST include a username to maintain HIPAA-compliant data isolation.
+6. **Username Isolation & Case Resilience**: All `GET` and `POST` requests MUST include a username. To prevent data fragmentation due to casing differences (e.g., "James" vs "james"), the backend implements **Global Case-Insensitive Normalization** for all lookups and aggregations.
 7. **Mobile App Enhancements**:
     - **Clinical History**: unified searchable lists for Journals and Thought Records.
     - **Glassmorphic UI**: High-contrast `GlassCard` implementation for patient records, ensuring visibility and readability in Dark Mode.

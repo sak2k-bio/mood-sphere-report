@@ -50,23 +50,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         };
 
         // --- HANDLE LOGIN ---
-        if (req.method === 'GET' && action === 'login') {
+        if (action === 'login') {
             if (!userSheet) return res.status(500).json({ error: 'Authentication sheet "Users" not found' });
 
+            const loginUsername = (req.body?.username || req.query.username) as string;
+            const loginPassword = (req.body?.password || req.query.password) as string;
+
+            if (!loginUsername || !loginPassword) {
+                return res.status(400).json({ error: 'Username and password required' });
+            }
+
             const users = await userSheet.getRows();
-            const user = users.find(u => u.get('Username') === username && u.get('Password') === password);
+            const user = users.find(u =>
+                (u.get('Username') || u.get('username') || '').toString().toLowerCase() === loginUsername.toLowerCase() &&
+                (u.get('Password') || u.get('password') || '').toString() === loginPassword
+            );
 
             if (user) {
                 return res.status(200).json({
                     success: true,
                     user: {
-                        username: safeStr(user.get('Username')),
-                        fullName: safeStr(user.get('Full Name')),
-                        role: safeStr(user.get('Role') || 'user')
+                        username: safeStr(user.get('Username') || user.get('username')),
+                        fullName: safeStr(user.get('Full Name') || user.get('fullName') || user.get('DisplayName') || user.get('displayName') || user.get('username')),
+                        role: safeStr(user.get('Role') || user.get('role') || user.get('Type') || user.get('type') || 'user')
                     }
                 });
             } else {
-                return res.status(401).json({ error: 'Invalid username or password' });
+                return res.status(401).json({ success: false, error: 'Invalid username or password' });
             }
         }
 
@@ -407,7 +417,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // --- HANDLE POST (DEFAULT MOOD ENTRY) ---
-        if (req.method === 'POST') {
+        // ONLY trigger this if no action is specified to prevent swallowing specific POST actions
+        if (req.method === 'POST' && !action) {
             const data = req.body;
             if (Array.isArray(data)) {
                 await dataSheet.addRows(data);
