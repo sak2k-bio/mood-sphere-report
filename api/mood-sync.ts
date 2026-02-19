@@ -51,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // --- HANDLE LOGIN ---
         if (action === 'login') {
+            console.log(`[LOGIN] Attempt for: ${req.method} ${req.query.username || req.body?.username}`);
             if (!userSheet) return res.status(500).json({ error: 'Authentication sheet "Users" not found' });
 
             const loginUsername = (req.body?.username || req.query.username) as string;
